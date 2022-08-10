@@ -1,11 +1,26 @@
+import { SimpleGrid } from '@mantine/core';
+import { ResultsCard } from '../components/ResultsCard/ResultsCard';
 import { Welcome } from '../components/Welcome/Welcome';
-import { ColorSchemeToggle } from '../components/ColorSchemeToggle/ColorSchemeToggle';
 
 export default function HomePage() {
   return (
     <>
       <Welcome />
-      <ColorSchemeToggle />
+      <SimpleGrid
+        mt={60}
+        cols={4}
+        spacing={20}
+        mx={20}
+        breakpoints={[
+          {maxWidth:980, cols:3, spacing:'xl'},
+          {maxWidth:760, cols:2, spacing:'xl'},
+          {maxWidth:520, cols:1, spacing:'xl'},
+        ]}>
+        <ResultsCard/>
+        <ResultsCard/>
+        <ResultsCard/>
+        <ResultsCard/>
+      </SimpleGrid>
     </>
   );
 }
