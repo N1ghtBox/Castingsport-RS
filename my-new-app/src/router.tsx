@@ -4,14 +4,14 @@ import {
     Route,
   } from "react-router-dom";
 import Layout from "./components/Layout";
-import Menu from "./scenes/menu";
+import Start from "./scenes/start";
   
   // You can do this:
   const router = createBrowserRouter(
     createRoutesFromElements(
       <>
-        <Route path="/main_window" element={<Layout children={<Menu />} />} />
-        <Route path="/login" element={<Layout children={<Menu />}/>} />
+        <Route path="/main_window" element={<Start/>} />
+        <Route path="/scores" element={<Layout/>} />
       </>
     )
   );

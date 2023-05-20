@@ -1,5 +1,5 @@
 import { Tabs, TabsProps, notification } from "antd";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import columns from "../columns";
 import { Categories, DisciplinesForCategories } from "../enums";
 import Competetors from "../interfaces/competetor";
@@ -7,6 +7,8 @@ import DataType from "../interfaces/dataType";
 import EditableTable from "./EditableTable";
 import ScoreTable from "./ScoreTable";
 import { Rule } from "antd/es/form";
+import { useLocation } from "react-router-dom";
+import { createCompetetorFromFile } from "../utils";
 
 const tabs: TabsProps['items'] = [
   {
@@ -49,22 +51,44 @@ const tabs: TabsProps['items'] = [
     key: 'D9',
     label: `D9`,
   },
+  {
+    key:'T3',
+    label:'3-bój'
+  },
+  {
+    key:'T5',
+    label:'5-bój'
+  }
 ];
 
-const Layout = (props: IProps) => {
+const Layout = () => {
   const [dataSource, setDataSource] = useState<DataType[]>([]);
   const [currentColumns, setColumns] = useState<any[]>(columns.list.columns)
   const [competitionFilter, setCompetitionFilter] = useState<(value?:any) => boolean>(() => () => true)
   const [categoryFilter, setCategoryFilter] = useState<(value?:any) => boolean>(() => () => true)
   const [selectedCategory, setSelectedCategory] = useState<string>('Wszyscy')
   const [isList, setIsList] = useState(true)
+  const [showAddButton, setShowAddButton] = useState(true)
   const [rules, setRules] = useState<Rule[]>([])
   const [key, setKey] = useState(0)
   const [api, contextHolder] = notification.useNotification();
+  const {state} = useLocation();
+
+  useEffect(()=>{
+    let data = (state as string[]).map(createCompetetorFromFile)
+    console.log(data)
+    setDataSource([...data])
+  },[state])
 
     const onChange = (key:string) => {
-      if(key === "list") setCompetitionFilter(() => () => true)
+      if(key === "list"){
+         setCompetitionFilter(() => () => true)
+         setShowAddButton(true)
+      } else {
+        setShowAddButton(false)
+      }
       if(key.startsWith("D")) {
+
         setIsList(false)
         setKey(parseInt(key[1]))
         let numberOfCompetition = parseInt(key[1])
@@ -166,6 +190,7 @@ const Layout = (props: IProps) => {
         <div className={'mainContainer'}>
             {contextHolder}
             {isList ? <EditableTable 
+              showAddButton={showAddButton}
               selectedCategory={selectedCategory}
               handleCategoryChange={handleCategoryChange}
               columns={currentColumns}

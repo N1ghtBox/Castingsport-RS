@@ -24,3 +24,7 @@ body {
 .tabs .ant-tabs-tab-active div{
   color:white !important;
 }
+.border td{
+  border-bottom:1px solid black !important;
+  padding-block: 5px !important;
+}

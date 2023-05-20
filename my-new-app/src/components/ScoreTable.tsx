@@ -158,10 +158,10 @@ const ScoreTable = (props: IProps) => {
             </div>
             <Table
                 components={components}
-                rowClassName={() => 'editable-row'}
+                rowClassName={() => 'editable-row border'}
                 bordered
                 showSorterTooltip={false}
-                pagination={{ pageSize: 15 }}
+                pagination={{ pageSize: 20 }}
                 style={{ maxHeight: "95vh", height: "95vh" }}
                 dataSource={props.dataSource}
                 columns={columns as ColumnTypes}

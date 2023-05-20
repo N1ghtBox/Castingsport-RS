@@ -155,15 +155,15 @@ const EditableTable = (props: IProps) => {
 
       return (
         <div>
-          <div style={{display:"flex", height:"5vh", alignItems:'center', gap:'30px'}}>
-            <Button 
+          <div style={{display:"flex", height:"5vh", alignItems:'center', gap:'14px'}}>
+            {props.showAddButton ? <Button 
               icon={<PlusOutlined />}
               onClick={props.handleAdd} 
               type="primary" 
-              style={{marginLeft:16, background:'#d9363e'}}/>
+              style={{marginLeft:16, background:'#d9363e'}}/> : null}
 
             <Select
-                style={{ width: 120 }}
+                style={{ width: 120, marginLeft:16 }}
                 value={props.selectedCategory}
                 onChange={props.handleCategoryChange}
                 options={[
@@ -183,10 +183,10 @@ const EditableTable = (props: IProps) => {
 
             <Table
               components={components}
-              rowClassName={() => 'editable-row'}
+              rowClassName={() => 'editable-row border'}
               bordered
-              pagination={{pageSize:15}}
-              style={{maxHeight:"95vh", height:"95vh"}}
+              pagination={{pageSize:20}}
+              style={{maxHeight:"95vh", height:"95vh", whiteSpace:'pre'}}
               dataSource={props.dataSource}
               columns={columns as ColumnTypes}
             />
@@ -201,6 +201,7 @@ interface IProps{
   columns: (ColumnTypes[number] & { editable?: boolean; dataIndex: string;})[]
   handleCategoryChange: (key:string) => void
   selectedCategory: string
+  showAddButton: boolean
 }
 
 export default EditableTable;

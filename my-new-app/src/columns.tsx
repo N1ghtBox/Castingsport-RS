@@ -1,6 +1,7 @@
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import IColumns from "./interfaces/columns";
 import moment from "moment";
+import { getTotalScoreT3, getTotalScoreT5 } from "./utils";
 
 const renderEmpty = (nameOfDataIndex:string) => {
   return (_:any, record:any) => {
@@ -77,6 +78,9 @@ let scoreDistanceHighest = [
     align:'center',
     width:'20%',
     sorter: (a:any,b:any) => a.score - b.score,
+    render(_:any,record:any){
+      return record.score.toFixed(2)
+    }
   },
   {
     title:'Punkty',
@@ -84,7 +88,7 @@ let scoreDistanceHighest = [
     align:'center',
     width:'20%',
     render(_:any, record:any) {
-      return `${Math.round(record.score * 1.5 * 100) / 100}`
+      return `${(Math.round(record.score * 1500) / 1000).toFixed(3)}`
     },
   }
 ]
@@ -96,6 +100,9 @@ let scoreDistanceFly = [
     editable:true,
     align:'center',
     width:'20%',
+    render(_:any,record:any){
+      return record.score.toFixed(2)
+    }
   },
   {
     title:'Rzut 2',
@@ -103,6 +110,9 @@ let scoreDistanceFly = [
     editable:true,
     align:'center',
     width:'20%',
+    render(_:any,record:any){
+      return record.score2.toFixed(2)
+    }
   },
 ]
 
@@ -226,5 +236,66 @@ const columns:IColumns = {
           }
         ]
       },
+      T3:{
+        columns:[
+          ...info,
+          ...Array.from({length:3}, (_:any, i: number) => {
+            return {
+                title:`D${i + 3}`,
+                align:'center',
+                render: (_:any, value:any) => {
+                    let discipline = value.disciplines[i+2]
+                    return i+3 === 5 ? Math.round(discipline.score * 150) /100 : discipline.score
+                },
+            } as any
+        }),
+        {
+          title:'D3-5',
+          defaultSortOrder:'descend',
+          sorter:(a:any, b:any) => {
+            let totalScoreA = getTotalScoreT3(a)
+            let totalScoreB = getTotalScoreT3(b)
+            return totalScoreA - totalScoreB
+          },
+          render: (_:any, value:any) => {
+            let totalScore =  getTotalScoreT3(value)
+            return totalScore
+          }
+        }
+        ],
+        rules:[]
+      },
+      T5:{
+        columns:[
+          ...info,
+          ...Array.from({length:5}, (_:any, i: number) => {
+            return {
+                title:`D${i + 1}`,
+                align:'center',
+                render: (_:any, value:any) => {
+                    let discipline = value.disciplines[i]
+                    return i + 1 === 5 ? 
+                          Math.round(discipline.score * 1.5 * 1000) / 1000 :
+                          discipline.score2 !== undefined ? `${(Math.round(discipline.score * 100) / 100).toFixed(2)}\t${(Math.round(discipline.score2 * 100) / 100).toFixed(2)}` : discipline.score
+                          
+                },
+            } as any
+        }),
+        {
+          title:'D1-5',
+          defaultSortOrder:'descend',
+          sorter:(a:any, b:any) => {
+            let totalScoreA = getTotalScoreT5(a)
+            let totalScoreB = getTotalScoreT5(b)
+            return totalScoreA - totalScoreB
+          },
+          render: (_:any, value:any) => {
+            let totalScore =  getTotalScoreT5(value)
+            return totalScore
+          }
+        }
+        ],
+        rules:[]
+      }
 }
 export default columns;
