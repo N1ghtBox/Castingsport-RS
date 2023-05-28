@@ -5,6 +5,7 @@ import type { FormInstance } from 'antd/es/form';
 import { Categories } from '../enums';
 import DataType from '../interfaces/dataType';
 import { PlusOutlined } from '@ant-design/icons';
+import TeamSelect from './TeamSelect';
 
 const EditableContext = React.createContext<FormInstance<any> | null>(null);
 
@@ -29,6 +30,7 @@ interface EditableCellProps {
   children: React.ReactNode;
   dataIndex: keyof DataType;
   record: DataType;
+  dataSource: DataType[];
   handleSave: (record: DataType) => void;
 }
 
@@ -39,6 +41,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
   dataIndex,
   record,
   handleSave,
+  dataSource,
   ...restProps
 }) => {
   const [editing, setEditing] = useState(false);
@@ -62,9 +65,12 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   };
 
-  const save = async () => {
+  const save = async (value?:any) => {
     try {
       const values = await form.validateFields();
+      if(value){
+        values.team = value
+      }
       if(dataIndex.startsWith("D")){
         let index = Object.values(values.disciplines).findIndex((DataType:any) => DataType.number === parseInt(dataIndex[1]))
         values.disciplines[index].takesPart = !values.disciplines[index].takesPart
@@ -102,6 +108,12 @@ const EditableCell: React.FC<EditableCellProps> = ({
                       }
                   })}
                   /> :
+            dataIndex === 'team' ?
+              <TeamSelect
+                  teams={[...new Set(dataSource.filter(value => value.team).filter(value => value.club == record.club).map(value => value.team))]}
+                  save={save}
+                />
+            :
             dataIndex.startsWith("D")?
               <Checkbox 
                 onChange={save}
@@ -145,6 +157,7 @@ const EditableTable = (props: IProps) => {
           ...col,
           onCell: (record: DataType) => ({
             record,
+            dataSource:props.dataSource,
             editable: col.editable,
             dataIndex: col.dataIndex,
             title: col.title,
@@ -156,11 +169,6 @@ const EditableTable = (props: IProps) => {
       return (
         <div>
           <div style={{display:"flex", height:"5vh", alignItems:'center', gap:'14px'}}>
-            {props.showAddButton ? <Button 
-              icon={<PlusOutlined />}
-              onClick={props.handleAdd} 
-              type="primary" 
-              style={{marginLeft:16, background:'#d9363e'}}/> : null}
 
             <Select
                 style={{ width: 120, marginLeft:16 }}
@@ -201,7 +209,6 @@ interface IProps{
   columns: (ColumnTypes[number] & { editable?: boolean; dataIndex: string;})[]
   handleCategoryChange: (key:string) => void
   selectedCategory: string
-  showAddButton: boolean
 }
 
 export default EditableTable;

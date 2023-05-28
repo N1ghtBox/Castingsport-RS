@@ -11,9 +11,11 @@ interface competition{
 interface DataType {
     key: React.Key;
     startingNumber: string;
+    disqualified:boolean
     name: string;
     club: string;
     category: Categories;
+    team?:string;
     disciplines: [...competition[]]
 }
 export default DataType

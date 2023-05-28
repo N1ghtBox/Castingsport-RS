@@ -5,6 +5,7 @@ interface Competetors {
     startingNumber: string;
     name: string;
     club: string;
+    disqualified:boolean
     category: Categories;
     score: number,
     score2?: number,

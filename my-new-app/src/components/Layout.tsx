@@ -1,14 +1,17 @@
-import { Tabs, TabsProps, notification } from "antd";
+import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
+import { Popconfirm, Tabs, TabsProps, notification } from "antd";
+import { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
+import { useLocation } from "react-router-dom";
 import columns from "../columns";
 import { Categories, DisciplinesForCategories } from "../enums";
 import Competetors from "../interfaces/competetor";
 import DataType from "../interfaces/dataType";
+import { createCompetetorFromFile } from "../utils";
 import EditableTable from "./EditableTable";
 import ScoreTable from "./ScoreTable";
-import { Rule } from "antd/es/form";
-import { useLocation } from "react-router-dom";
-import { createCompetetorFromFile } from "../utils";
+import EditModal from "./EditModal";
+import ResultsTable from "./ResultsTable";
 
 const tabs: TabsProps['items'] = [
   {
@@ -68,7 +71,9 @@ const Layout = () => {
   const [categoryFilter, setCategoryFilter] = useState<(value?:any) => boolean>(() => () => true)
   const [selectedCategory, setSelectedCategory] = useState<string>('Wszyscy')
   const [isList, setIsList] = useState(true)
-  const [showAddButton, setShowAddButton] = useState(true)
+  const [showResults, setShowResults] = useState(false)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editEntity, setEditEntity] = useState<DataType | undefined>()
   const [rules, setRules] = useState<Rule[]>([])
   const [key, setKey] = useState(0)
   const [api, contextHolder] = notification.useNotification();
@@ -76,20 +81,19 @@ const Layout = () => {
 
   useEffect(()=>{
     let data = (state as string[]).map(createCompetetorFromFile)
-    console.log(data)
     setDataSource([...data])
   },[state])
 
     const onChange = (key:string) => {
       if(key === "list"){
-         setCompetitionFilter(() => () => true)
-         setShowAddButton(true)
-      } else {
-        setShowAddButton(false)
+        setCompetitionFilter(() => () => true)
+        setIsList(true)
+        setShowResults(false)
       }
+      
       if(key.startsWith("D")) {
-
         setIsList(false)
+        setShowResults(false)
         setKey(parseInt(key[1]))
         let numberOfCompetition = parseInt(key[1])
         setCompetitionFilter(() => (value:any) => {
@@ -97,10 +101,17 @@ const Layout = () => {
         })
         
       }
-      else{
-         setIsList(true)
-         setKey(0)
+
+      if(key.startsWith("T")){
+        setKey(parseInt(key[1]))
+        setIsList(false)
+        setShowResults(true)
+        if(selectedCategory  === 'Wszyscy'){
+          setCategoryFilter(() => (value:any) => {return value.category === 'Junior'})
+          setSelectedCategory('Junior')
         }
+      }
+
       setColumns((columns as any)[key].columns)
       setRules((columns as any)[key].rules)
     }
@@ -162,6 +173,7 @@ const Layout = () => {
         const newData: DataType = {
           key: `${dataSource.length + 1}`,
           startingNumber:'',
+          disqualified:false,
           name: ``,
           club: '',
           category:Categories.Kadet,
@@ -185,33 +197,93 @@ const Layout = () => {
         if(key === "Wszyscy") setCategoryFilter(() => () => true)
         else setCategoryFilter(() => (value:any) => {return value.category === key})
       }
+      
+
+      const editColumn = {
+        title:'Akcje',
+        align:'center',
+        render: (_:any, record: any) => {
+          return <EditOutlined 
+            onClick={()=>{
+              setModalOpen(true)
+              setEditEntity(record)
+            }}
+          />
+        }
+      }
+
+      const onCancel = () => {
+        setEditEntity(undefined)
+        setModalOpen(false)
+      }
+
+      const onDelete = () => {
+        let localDatasource = [...dataSource]
+        localDatasource = localDatasource.filter(data => data.key !== editEntity.key)
+        setDataSource([...localDatasource])
+        setEditEntity(undefined)
+        setModalOpen(false)
+      }
+
+      const onDisqualify = () => {
+        let localDatasource = [...dataSource]
+        let competetorToDisqualify = localDatasource.find(data => data.key === editEntity.key)
+        competetorToDisqualify.disqualified = true
+        localDatasource = localDatasource.filter(data => data.key !== editEntity.key)
+        setDataSource([...localDatasource,competetorToDisqualify])
+        setEditEntity(undefined)
+        setModalOpen(false)
+      }
+      
 
     return (
         <div className={'mainContainer'}>
+            <EditModal
+              open={modalOpen}
+              editEntity={editEntity}
+              onCancel={onCancel}
+              onDelete={onDelete}
+              onDisqualify={onDisqualify}
+            />
             {contextHolder}
             {isList ? <EditableTable 
-              showAddButton={showAddButton}
               selectedCategory={selectedCategory}
               handleCategoryChange={handleCategoryChange}
-              columns={currentColumns}
+              columns={[...currentColumns, editColumn]}
               handleSave={handleSave}
               dataSource={dataSource.filter(categoryFilter)} 
               handleAdd={handleAdd}/>
             :
-            <ScoreTable 
-              selectedCategory={selectedCategory}
-              handleCategoryChange={handleCategoryChange}
-              columns={currentColumns}
-              handleSave={handleSaveScore}
-              rules={rules}
-              dataSource={dataSource.filter(competitionFilter).filter(categoryFilter).map((value:DataType) => {
-                return {
-                  ...value,
-                  score:value.disciplines[key - 1].score,
-                  score2:value.disciplines[key - 1].score2,
-                  time:value.disciplines[key - 1].time,
-                }
-              })} />}
+            !showResults ? 
+              <ScoreTable 
+                selectedCategory={selectedCategory}
+                handleCategoryChange={handleCategoryChange}
+                columns={currentColumns}
+                handleSave={handleSaveScore}
+                rules={rules}
+                dataSource={dataSource.filter(competitionFilter).filter(categoryFilter).map((value:DataType) => {
+                  return {
+                    ...value,
+                    score:value.disciplines[key - 1].score,
+                    score2:value.disciplines[key - 1].score2,
+                    time:value.disciplines[key - 1].time,
+                  }
+                })} 
+                />
+            :
+                <ResultsTable
+                  selectedCategory={selectedCategory}
+                  handleCategoryChange={handleCategoryChange}
+                  columns={currentColumns}
+                  dataSource={dataSource.filter(categoryFilter).map((value:DataType) => {
+                    return {
+                      ...value,
+                      score:value.disciplines[key - 1].score,
+                      score2:value.disciplines[key - 1].score2,
+                      time:value.disciplines[key - 1].time,
+                    }
+                  })} />
+            }
             <div style={{display:'flex', position:'absolute', width:'50%', left:0, bottom:0}}>
               <Tabs 
                 className={'tabs'}
