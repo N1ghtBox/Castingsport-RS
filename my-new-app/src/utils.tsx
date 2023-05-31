@@ -1,6 +1,7 @@
 import DataType from "./interfaces/dataType"
 
 export const getTotalScoreT3 = (a:any) => {
+    if(!a.disciplines) return 0
     let D3 = parseInt(a.disciplines[2].score)
     let D4 = parseInt(a.disciplines[3].score)
     let D5 = Math.round(parseFloat(a.disciplines[4].score) * 1.5 * 1000) / 1000
@@ -9,6 +10,7 @@ export const getTotalScoreT3 = (a:any) => {
 }   
 
 export const getTotalScoreT5 = (a:any) => {
+    if(!a.disciplines) return 0
     let D1 = parseInt(a.disciplines[0].score)
     let D2 = parseInt(a.disciplines[1].score) + parseInt(a.disciplines[1].score2)
     let D3 = parseInt(a.disciplines[2].score)
@@ -27,7 +29,8 @@ export const createCompetetorFromFile = (data: string) => {
         name:values[2],
         club:values[3],
         category:values[4] as any,
-        disciplines: [...values.slice(5).map((value:string, i:number) => {
+        team:values[5],
+        disciplines: [...values.slice(6).map((value:string, i:number) => {
             if(i === 1) return {
                 takesPart:true,
                 number:i + 1,

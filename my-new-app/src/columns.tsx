@@ -104,6 +104,10 @@ let scoreDistanceFly = [
     editable:true,
     align:'center',
     width:'20%',
+    sorter:{
+      multiple:2,
+      compare:(a:any,b:any) => a.score - b.score
+    },
     render(_:any,record:any){
       return !record.disqualified ? record.score.toFixed(2) : 'DNS'
     }
@@ -114,8 +118,12 @@ let scoreDistanceFly = [
     editable:true,
     align:'center',
     width:'20%',
+    sorter:{
+      multiple:1,
+      compare:(a:any,b:any) => a.score - b.score
+    },
     render(_:any,record:any){
-      return !record.disqualified ? record.score.toFixed(2) : 'DNS'
+      return !record.disqualified ? record.score2.toFixed(2) : 'DNS'
     }
   },
 ]
@@ -310,6 +318,6 @@ const columns:IColumns = {
         }
         ],
         rules:[]
-      }
+      },
 }
 export default columns;

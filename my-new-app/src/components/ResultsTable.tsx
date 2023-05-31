@@ -1,15 +1,76 @@
 import { Select, Table } from 'antd';
-import type { Rule } from 'antd/es/form';
+import { useEffect, useState } from 'react';
 import { Categories } from '../enums';
-import Competetors from '../interfaces/competetor';
-import { useState } from 'react';
+import DataType from '../interfaces/dataType';
 
 type EditableTableProps = Parameters<typeof Table>[0];
 
 type ColumnTypes = Exclude<EditableTableProps['columns'], undefined>;
 
+const teamResultsColumns:ColumnTypes = [
+    {
+        title:'Drużyna',
+        dataIndex:'teamName',
+        align:'center'
+    },
+    {
+        title:'Team',
+        dataIndex:'team',
+        align:'center'
+    },
+    {
+        title:'Wyniki',
+        dataIndex:'scores',
+        align:'center'
+    },
+    {
+        title:'Total',
+        dataIndex:'total',
+        align:'center',
+        sorter:(a:any,b:any) => {
+            return a.total - b.total
+        },
+        defaultSortOrder:'descend',
+        sortOrder:'descend',
+    },
+    
+]
+
+type team = {team:string, scores:string, total:number, teamName:string}
+
 const ResultsTable = (props: IProps) => {
     const [type, setType] = useState<'Indywidualnie' | 'Drużyny'>('Indywidualnie');
+    const [results, setResults] = useState<any[]>(props.dataSource)
+
+    const changeType = (key:'Indywidualnie' | 'Drużyny') => {
+        setType(key)
+        if(key === 'Indywidualnie') setResults(props.dataSource)
+        else{
+            let competetorsGroupByTeam:team[] = []
+            props.dataSource.forEach(value => {
+                if(!value.team) return
+                let teamIndex = competetorsGroupByTeam.findIndex(team => team.teamName === value.team)
+                if(teamIndex >= 0){
+                    let localTeam = competetorsGroupByTeam[teamIndex]
+                    localTeam.scores += `${props.getScores(value)}\n`
+                    localTeam.team += `${value.startingNumber} ${value.name}\n`
+                    localTeam.total += props.getScores(value)
+                }else{
+                    competetorsGroupByTeam.push({
+                        scores: `${props.getScores(value)}\n`,
+                        team:`${value.startingNumber} ${value.name}\n`,
+                        total: props.getScores(value),
+                        teamName:`${value.team}`
+                    })
+                }
+            })
+            setResults(competetorsGroupByTeam)
+        }
+    }
+
+    useEffect(()=>{
+        changeType(type)
+    },[props.getScores])
 
     return (
         <div>
@@ -29,7 +90,7 @@ const ResultsTable = (props: IProps) => {
                     />
                 <Select
                     style={{ width: 120, marginLeft: 16 }}
-                    onChange={key => setType(key)}
+                    onChange={changeType}
                     value={type}
                     options={[
                         {
@@ -48,19 +109,20 @@ const ResultsTable = (props: IProps) => {
                 bordered
                 showSorterTooltip={false}
                 pagination={{ pageSize: 20 }}
-                style={{ maxHeight: "95vh", height: "95vh" }}
-                dataSource={props.dataSource}
-                columns={props.columns as ColumnTypes}
+                style={{ maxHeight: "95vh", height: "95vh", whiteSpace:'pre' }}
+                dataSource={results}
+                columns={type ==='Drużyny' ? teamResultsColumns : props.columns as ColumnTypes}
             />
         </div>
     )
 }
 
 interface IProps {
-    dataSource: Competetors[]
+    dataSource: DataType[]
     columns: (ColumnTypes[number] & { editable?: boolean; dataIndex: string; })[]
     handleCategoryChange: (key:string) => void
     selectedCategory: string
+    getScores:(value:DataType) => number
 }
 
 export default ResultsTable;

@@ -1,5 +1,5 @@
-import { DeleteOutlined, EditOutlined } from "@ant-design/icons";
-import { Popconfirm, Tabs, TabsProps, notification } from "antd";
+import { EditOutlined } from "@ant-design/icons";
+import { Tabs, TabsProps, notification } from "antd";
 import { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
@@ -7,11 +7,12 @@ import columns from "../columns";
 import { Categories, DisciplinesForCategories } from "../enums";
 import Competetors from "../interfaces/competetor";
 import DataType from "../interfaces/dataType";
-import { createCompetetorFromFile } from "../utils";
-import EditableTable from "./EditableTable";
-import ScoreTable from "./ScoreTable";
+import { createCompetetorFromFile, getTotalScoreT3, getTotalScoreT5 } from "../utils";
 import EditModal from "./EditModal";
+import EditableTable from "./EditableTable";
 import ResultsTable from "./ResultsTable";
+import ScoreTable from "./ScoreTable";
+import send from "../renderer";
 
 const tabs: TabsProps['items'] = [
   {
@@ -81,8 +82,11 @@ const Layout = () => {
 
   useEffect(()=>{
     let data = (state as string[]).map(createCompetetorFromFile)
+    send('test')
     setDataSource([...data])
   },[state])
+
+
 
     const onChange = (key:string) => {
       if(key === "list"){
@@ -272,17 +276,11 @@ const Layout = () => {
                 />
             :
                 <ResultsTable
+                  getScores={key === 3 ? getTotalScoreT3 : getTotalScoreT5}
                   selectedCategory={selectedCategory}
                   handleCategoryChange={handleCategoryChange}
                   columns={currentColumns}
-                  dataSource={dataSource.filter(categoryFilter).map((value:DataType) => {
-                    return {
-                      ...value,
-                      score:value.disciplines[key - 1].score,
-                      score2:value.disciplines[key - 1].score2,
-                      time:value.disciplines[key - 1].time,
-                    }
-                  })} />
+                  dataSource={dataSource.filter(categoryFilter)} />
             }
             <div style={{display:'flex', position:'absolute', width:'50%', left:0, bottom:0}}>
               <Tabs 
