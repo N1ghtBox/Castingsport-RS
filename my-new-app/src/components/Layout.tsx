@@ -12,7 +12,6 @@ import EditModal from "./EditModal";
 import EditableTable from "./EditableTable";
 import ResultsTable from "./ResultsTable";
 import ScoreTable from "./ScoreTable";
-import send from "../renderer";
 
 const tabs: TabsProps['items'] = [
   {
@@ -82,7 +81,6 @@ const Layout = () => {
 
   useEffect(()=>{
     let data = (state as string[]).map(createCompetetorFromFile)
-    send('test')
     setDataSource([...data])
   },[state])
 
