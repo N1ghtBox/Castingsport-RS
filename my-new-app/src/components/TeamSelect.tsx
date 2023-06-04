@@ -34,14 +34,12 @@ const TeamSelect = (props:IProps) => {
             <Divider style={{ margin: '8px 0' }} />
             <Space style={{ padding: '0 8px 4px' }}>
               <Input
-                placeholder="Please enter item"
+                placeholder="Dodaj nową drużyne"
                 ref={inputRef}
                 value={name}
                 onChange={onNameChange}
               />
-              <Button type="text" icon={<PlusOutlined />} onClick={addItem}>
-                Add item
-              </Button>
+              <Button type="text" icon={<PlusOutlined />} onClick={addItem}/>
             </Space>
           </>
         )}

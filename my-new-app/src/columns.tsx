@@ -6,7 +6,7 @@ import { getTotalScoreT3, getTotalScoreT5 } from "./utils";
 
 const renderEmpty = (nameOfDataIndex:string) => {
   return (_:any, record:any) => {
-    if(record[nameOfDataIndex] === '' || record[nameOfDataIndex] === undefined) return <div style={{width:'100%', height:'30px'}}></div>
+    if(record[nameOfDataIndex] === '' || record[nameOfDataIndex] === undefined) return <div style={{width:'100%', height:'22px'}}></div>
     return record[nameOfDataIndex]
   }
 }

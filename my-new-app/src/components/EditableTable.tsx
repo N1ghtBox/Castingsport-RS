@@ -68,9 +68,10 @@ const EditableCell: React.FC<EditableCellProps> = ({
   const save = async (value?:any) => {
     try {
       const values = await form.validateFields();
-      if(value){
+      if(value && dataIndex === 'team'){
         values.team = value
       }
+
       if(dataIndex.startsWith("D")){
         let index = Object.values(values.disciplines).findIndex((DataType:any) => DataType.number === parseInt(dataIndex[1]))
         values.disciplines[index].takesPart = !values.disciplines[index].takesPart
@@ -170,8 +171,14 @@ const EditableTable = (props: IProps) => {
         <div>
           <div style={{display:"flex", height:"5vh", alignItems:'center', gap:'14px'}}>
 
+            <Button 
+              onClick={props.handleAdd}
+              type="primary" 
+              icon={<PlusOutlined />} 
+              style={{ marginLeft:16, background:'#d9363e' }}/>
+
             <Select
-                style={{ width: 120, marginLeft:16 }}
+                style={{ width: 120}}
                 value={props.selectedCategory}
                 onChange={props.handleCategoryChange}
                 options={[
@@ -194,7 +201,7 @@ const EditableTable = (props: IProps) => {
               rowClassName={() => 'editable-row border'}
               bordered
               pagination={{pageSize:20}}
-              style={{maxHeight:"95vh", height:"95vh", whiteSpace:'pre'}}
+              style={{maxHeight:"95vh", height:"calc(95vh - 22px)", whiteSpace:'pre'}}
               dataSource={props.dataSource}
               columns={columns as ColumnTypes}
             />

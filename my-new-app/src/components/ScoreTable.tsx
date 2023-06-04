@@ -162,7 +162,7 @@ const ScoreTable = (props: IProps) => {
                 bordered
                 showSorterTooltip={false}
                 pagination={{ pageSize: 20 }}
-                style={{ maxHeight: "95vh", height: "95vh" }}
+                style={{ maxHeight: "95vh", height: "calc(95vh - 22px)" }}
                 dataSource={props.dataSource}
                 columns={columns as ColumnTypes}
             />

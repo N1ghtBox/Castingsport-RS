@@ -109,7 +109,7 @@ const ResultsTable = (props: IProps) => {
                 bordered
                 showSorterTooltip={false}
                 pagination={{ pageSize: 20 }}
-                style={{ maxHeight: "95vh", height: "95vh", whiteSpace:'pre' }}
+                style={{ maxHeight: "95vh", height: "calc(95vh - 22px)", whiteSpace:'pre' }}
                 dataSource={results}
                 columns={type ==='Drużyny' ? teamResultsColumns : props.columns as ColumnTypes}
             />

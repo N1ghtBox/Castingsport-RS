@@ -1,17 +1,19 @@
-import { EditOutlined } from "@ant-design/icons";
-import { Tabs, TabsProps, notification } from "antd";
+import { EditOutlined, HomeOutlined } from "@ant-design/icons";
+import { Breadcrumb, message, notification, Tabs, TabsProps } from "antd";
 import { Rule } from "antd/es/form";
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useLocation } from "react-router-dom";
+import ICompetition from "../interfaces/Competition";
 import columns from "../columns";
 import { Categories, DisciplinesForCategories } from "../enums";
 import Competetors from "../interfaces/competetor";
 import DataType from "../interfaces/dataType";
-import { createCompetetorFromFile, getTotalScoreT3, getTotalScoreT5 } from "../utils";
-import EditModal from "./EditModal";
+import { getMessageProps, getTotalScoreT3, getTotalScoreT5 } from "../utils";
 import EditableTable from "./EditableTable";
+import EditModal from "./EditModal";
 import ResultsTable from "./ResultsTable";
 import ScoreTable from "./ScoreTable";
+const { ipcRenderer } = window.require("electron");
 
 const tabs: TabsProps['items'] = [
   {
@@ -66,6 +68,7 @@ const tabs: TabsProps['items'] = [
 
 const Layout = () => {
   const [dataSource, setDataSource] = useState<DataType[]>([]);
+  const [competitionInfo, setCompetitionInfo] = useState<ICompetition>({id:'', name:''})
   const [currentColumns, setColumns] = useState<any[]>(columns.list.columns)
   const [competitionFilter, setCompetitionFilter] = useState<(value?:any) => boolean>(() => () => true)
   const [categoryFilter, setCategoryFilter] = useState<(value?:any) => boolean>(() => () => true)
@@ -76,15 +79,25 @@ const Layout = () => {
   const [editEntity, setEditEntity] = useState<DataType | undefined>()
   const [rules, setRules] = useState<Rule[]>([])
   const [key, setKey] = useState(0)
-  const [api, contextHolder] = notification.useNotification();
+  const [notificationApi, contextHolderNotifications] = notification.useNotification();
+  const [messageApi, contextHolderMessages] = message.useMessage();
   const {state} = useLocation();
 
   useEffect(()=>{
-    let data = (state as string[]).map(createCompetetorFromFile)
-    setDataSource([...data])
+    setCompetitionInfo({id:state.id, name:state.name})
+    setDataSource([...state.competetors]);
+    setInterval(test, 1000 * 60 * 5)
   },[state])
 
-
+  const test = async () => {
+    let localDatasource, localCompInfo
+    setCompetitionInfo(prev => {localCompInfo = prev; return prev})
+    setDataSource(prev => {localDatasource = prev; return prev})
+    messageApi.open(getMessageProps('loading', 'Zapisywanie...', 3))
+    await ipcRenderer.invoke('saveCompetiton', {...localCompInfo as any, competetors:localDatasource})
+    messageApi.destroy()
+    messageApi.open(getMessageProps('success', 'Zapisano', 2))
+  }
 
     const onChange = (key:string) => {
       if(key === "list"){
@@ -124,7 +137,7 @@ const Layout = () => {
         const item = newData[index];
 
         if(item.startingNumber !== row.startingNumber && newData.find((item) => item.startingNumber === row.startingNumber)){
-          api.warning({
+          notificationApi.warning({
             message:`Podany numer startowy został powielony`,
             duration:3,
             placement: 'bottomRight',
@@ -240,6 +253,18 @@ const Layout = () => {
 
     return (
         <div className={'mainContainer'}>
+          <Breadcrumb
+            style={{marginLeft:16}}
+            items={[
+              {
+                href: '/main_window',
+                title: <HomeOutlined />,
+              },
+              {
+                title: competitionInfo.name,
+              },
+            ]}
+            />
             <EditModal
               open={modalOpen}
               editEntity={editEntity}
@@ -247,7 +272,8 @@ const Layout = () => {
               onDelete={onDelete}
               onDisqualify={onDisqualify}
             />
-            {contextHolder}
+            {contextHolderMessages}
+            {contextHolderNotifications}
             {isList ? <EditableTable 
               selectedCategory={selectedCategory}
               handleCategoryChange={handleCategoryChange}
