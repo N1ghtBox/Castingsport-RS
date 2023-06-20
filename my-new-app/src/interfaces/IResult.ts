@@ -8,14 +8,17 @@ interface competition{
     time?:string,
 }
 
-interface DataType {
+interface IResult{
+    score: number;
+    score2: number;
+    time: string;
     key: React.Key;
     startingNumber: string;
-    disqualified:boolean
+    disqualified: boolean;
     name: string;
     club: string;
     category: Categories;
-    team?:string;
-    disciplines: competition[]
+    team?: string;
+    disciplines: competition[];
 }
-export default DataType
+export default IResult

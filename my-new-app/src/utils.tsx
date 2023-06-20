@@ -21,10 +21,11 @@ export const getTotalScoreT5 = (a:any) => {
     return Math.round((D1 + D2 + D3 + D4 + D5) *1000)/1000
 }  
 
-export const getMessageProps = (type:'loading' | 'success' | 'error', content:string, duration:number): ArgsProps =>{
+export const getMessageProps = (type:'loading' | 'success' | 'error', content:string, duration:number, key?:string): ArgsProps =>{
     return {
         type,
         content,
-        duration
+        duration,
+        key
     }
 }

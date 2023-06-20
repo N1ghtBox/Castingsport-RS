@@ -4,6 +4,7 @@ import {
     Route,
   } from "react-router-dom";
 import Layout from "./components/Layout";
+import Results from "./scenes/results";
 import Start from "./scenes/start";
   
   // You can do this:
@@ -12,6 +13,7 @@ import Start from "./scenes/start";
       <>
         <Route path="/main_window" element={<Start/>} />
         <Route path="/scores" element={<Layout/>} />
+        <Route path="/results" element={<Results/>} />
       </>
     )
   );

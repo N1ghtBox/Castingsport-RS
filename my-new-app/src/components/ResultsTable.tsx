@@ -72,6 +72,10 @@ const ResultsTable = (props: IProps) => {
         changeType(type)
     },[props.getScores])
 
+    useEffect(()=>{
+        setResults(props.dataSource)
+    },[props.dataSource])
+
     return (
         <div>
             <div style={{display:"flex", height:"5vh", alignItems:'center', gap:'30px'}}>

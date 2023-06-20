@@ -1,18 +1,20 @@
-import { EditOutlined, HomeOutlined } from "@ant-design/icons";
-import { Breadcrumb, message, notification, Tabs, TabsProps } from "antd";
+import { EditOutlined, HomeOutlined, PrinterOutlined, SaveOutlined, SettingOutlined } from "@ant-design/icons";
+import { Breadcrumb, ConfigProvider, FloatButton, message, notification, Tabs, TabsProps, Tooltip } from "antd";
 import { Rule } from "antd/es/form";
-import { useCallback, useEffect, useState } from "react";
-import { useLocation } from "react-router-dom";
-import ICompetition from "../interfaces/Competition";
+import moment from "moment";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import columns from "../columns";
 import { Categories, DisciplinesForCategories } from "../enums";
 import Competetors from "../interfaces/competetor";
+import ICompetition from "../interfaces/Competition";
 import DataType from "../interfaces/dataType";
 import { getMessageProps, getTotalScoreT3, getTotalScoreT5 } from "../utils";
 import EditableTable from "./EditableTable";
 import EditModal from "./EditModal";
 import ResultsTable from "./ResultsTable";
 import ScoreTable from "./ScoreTable";
+
 const { ipcRenderer } = window.require("electron");
 
 const tabs: TabsProps['items'] = [
@@ -68,7 +70,7 @@ const tabs: TabsProps['items'] = [
 
 const Layout = () => {
   const [dataSource, setDataSource] = useState<DataType[]>([]);
-  const [competitionInfo, setCompetitionInfo] = useState<ICompetition>({id:'', name:''})
+  const [competitionInfo, setCompetitionInfo] = useState<ICompetition>({id:'', name:'', logo:''})
   const [currentColumns, setColumns] = useState<any[]>(columns.list.columns)
   const [competitionFilter, setCompetitionFilter] = useState<(value?:any) => boolean>(() => () => true)
   const [categoryFilter, setCategoryFilter] = useState<(value?:any) => boolean>(() => () => true)
@@ -82,19 +84,26 @@ const Layout = () => {
   const [notificationApi, contextHolderNotifications] = notification.useNotification();
   const [messageApi, contextHolderMessages] = message.useMessage();
   const {state} = useLocation();
+  const navigate = useNavigate()
+
 
   useEffect(()=>{
-    setCompetitionInfo({id:state.id, name:state.name})
+    setCompetitionInfo({id:state.id, name:state.name, logo:state.logo})
     setDataSource([...state.competetors]);
-    setInterval(test, 1000 * 60 * 5)
+    setInterval(UpdateComp, 1000 * 60 * 5)
+    return () => clearInterval()
   },[state])
 
-  const test = async () => {
-    let localDatasource, localCompInfo
+  useEffect(()=>{
+    return clearInterval()
+  },[])
+
+  const UpdateComp = async () => {
+    let localDatasource, localCompInfo: ICompetition
     setCompetitionInfo(prev => {localCompInfo = prev; return prev})
     setDataSource(prev => {localDatasource = prev; return prev})
     messageApi.open(getMessageProps('loading', 'Zapisywanie...', 3))
-    await ipcRenderer.invoke('saveCompetiton', {...localCompInfo as any, competetors:localDatasource})
+    await ipcRenderer.invoke('saveCompetiton', { name:localCompInfo.name, id:localCompInfo.id, competetors:localDatasource})
     messageApi.destroy()
     messageApi.open(getMessageProps('success', 'Zapisano', 2))
   }
@@ -198,7 +207,7 @@ const Layout = () => {
                 score:0,
                 number:i+1,
                 score2:0,
-                time:'_.__.__',
+                time:'',
                 takesPart: i >= 2 && i < 5 ? true : false,
               }
             })
@@ -249,22 +258,82 @@ const Layout = () => {
         setEditEntity(undefined)
         setModalOpen(false)
       }
-      
+
+      const printResults = () => {
+        let competetors = getFilteredCompetetors().sort((a:any,b:any) => {
+          if(!a.score2 || !b.score2) return a.score - b.score
+          return (a.score + a.score2) - (b.score + b.score2)
+        })
+        let columns = currentColumns.map(column => column.title)
+
+        let info = {
+          name: competitionInfo.name,
+          logo:competitionInfo.logo,
+          category:selectedCategory,
+          dNumber:key,
+        }
+
+        navigate('/results', {state:{columns, results:competetors, info}})
+      }
+
+      const getFilteredCompetetors = () => {
+        return dataSource.filter(competitionFilter).filter(categoryFilter).map((value:DataType) => {
+          return {
+            ...value,
+            score:value.disciplines[key - 1].score,
+            score2:value.disciplines[key - 1].score2,
+            time:value.disciplines[key - 1].time,
+          }
+        })
+      }
 
     return (
         <div className={'mainContainer'}>
+          <ConfigProvider
+            theme={{
+              
+              token: {
+                
+                colorPrimary: '#d9363e',
+              },
+            }}
+          >
+            <FloatButton.Group
+              trigger="click"
+              type="primary"
+              style={{ right: 24 }}
+              className={'changeBg'}
+              icon={<SettingOutlined />}
+              >
+
+              {!isList ? 
+               selectedCategory === "Wszyscy" ? 
+                <Tooltip title="Należy wybrać kategorie">
+                  <FloatButton icon={<PrinterOutlined disabled/>} /> 
+                </Tooltip>
+               :
+              <FloatButton icon={<PrinterOutlined />} onClick={() => printResults()}/> 
+              : null}
+              <FloatButton icon={<SaveOutlined />} onClick={() => UpdateComp()}/>
+            </FloatButton.Group>
+          </ConfigProvider>
           <Breadcrumb
             style={{marginLeft:16}}
             items={[
               {
                 href: '/main_window',
                 title: <HomeOutlined />,
+                onClick: async () => {
+                  await UpdateComp()
+                  navigate('/main_window')
+                }
               },
               {
                 title: competitionInfo.name,
               },
             ]}
             />
+            <img src={competitionInfo.logo} alt="" style={{position:'absolute', right:16, top:10, height:'5vh'}}/>
             <EditModal
               open={modalOpen}
               editEntity={editEntity}
@@ -289,14 +358,7 @@ const Layout = () => {
                 columns={currentColumns}
                 handleSave={handleSaveScore}
                 rules={rules}
-                dataSource={dataSource.filter(competitionFilter).filter(categoryFilter).map((value:DataType) => {
-                  return {
-                    ...value,
-                    score:value.disciplines[key - 1].score,
-                    score2:value.disciplines[key - 1].score2,
-                    time:value.disciplines[key - 1].time,
-                  }
-                })} 
+                dataSource={getFilteredCompetetors()} 
                 />
             :
                 <ResultsTable

@@ -21,6 +21,9 @@ body {
 .tabs .ant-tabs-tab-active{
   background: #d9363e !important;
 }
+/* .changeBg .ant-float-btn-body{
+  background-color: #d9363e;
+} */
 .tabs .ant-tabs-tab-active div{
   color:white !important;
 }

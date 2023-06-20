@@ -1,9 +1,20 @@
+import { mergeStyleSets } from "@fluentui/merge-styles";
 import { Input, message, Modal } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import CompetitionCard from "../components/CompetitionCard";
+import UploadPicture from "../components/UploadPic";
 import { getMessageProps } from "../utils";
 
 const {ipcRenderer} = window.require('electron')
+
+const classNames = mergeStyleSets({
+    removeWidth:{
+        'span':{
+            width:'auto !important',
+        }
+    }
+})
 
 const Start = (props: IProps) => {
     const navigate = useNavigate()
@@ -11,6 +22,7 @@ const Start = (props: IProps) => {
     const [listOfCompetition, setListOfCompetiton] = useState([])
     const [isModalOpen, setModalOpen] = useState(false)
     const [newCompName, setNewCompName] = useState('')
+    const [logo, setLogo] = useState<string>('')
 
     useEffect(()=>{
         (async () => {
@@ -38,9 +50,28 @@ const Start = (props: IProps) => {
     }
 
     const onOk = async () => {
-        let comp = await ipcRenderer.invoke('createNewComp', {newCompName})
-        navigate('/scores', {state:comp})
-    }
+        if(!newCompName){
+            messageApi.open(getMessageProps('error','Nie podano nazwy', 2))
+            return
+        }
+
+        if(!logo){
+            messageApi.open(getMessageProps('error','Nie podano logo', 2))
+            return
+        }
+        try{
+            messageApi.open(getMessageProps('loading','Tworzenie zawodów...', 2))
+            let comp = await ipcRenderer.invoke('createNewComp', {logo, newCompName})
+            navigate('/scores', {state:comp})
+        }catch (ex){
+            console.log(ex)
+            if(ex.toString().includes('413')){
+                messageApi.open(getMessageProps('error','Zbyt duży plik', 4))
+                return
+            }
+            messageApi.open(getMessageProps('error','Nie udało się utworzyć zawodów', 2))
+        }
+        }
 
     return(
         <div style={{height:'100vh', width:'100vw', display:'flex', justifyContent:'center', alignItems:'center', gap:'50px'}}>
@@ -49,23 +80,34 @@ const Start = (props: IProps) => {
                 title="Utwórz nowe zawody" 
                 open={isModalOpen} 
                 onOk={onOk} 
+                okText={'Utwórz'}
+                cancelText={'Anuluj'}
+                okButtonProps={{style:{background:'#d9363e'}}}
                 onCancel={onCancel}>
-                    <Input 
-                        placeholder="Wprowadź nazwę" 
-                        value={newCompName}
-                        onChange={e => setNewCompName(e.target.value)}/>
+                    <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:'50px'}} className={classNames.removeWidth}>
+                        <Input 
+                            style={{height:'40px'}}
+                            placeholder="Wprowadź nazwę" 
+                            value={newCompName}
+                            onChange={e => setNewCompName(e.target.value)}/>
+                        <UploadPicture
+                            uploadPicture={pic => setLogo(pic)}
+                            />
+                    </div>
+
             </Modal>
             {contextHolder}
             {listOfCompetition.map( value => (
-                <div style={{width:'100px', height:'100px', background:'blue'}} key={value.id} onClick={() => openCompetition(value.id)}>
-                    {value.name}
-                </div>
+                <CompetitionCard
+                    key={value.id}
+                    competition={value}
+                    onClick={()=> openCompetition(value.id)}
+                    />
             ))}
-            <div 
-                style={{width:'100px', height:'100px', background:'red'}} 
-                onClick={() => setModalOpen(true)}>
-
-            </div>
+                <CompetitionCard
+                    addNewCard
+                    onClick={()=>setModalOpen(true)}
+                    />
         </div>
     )
 }

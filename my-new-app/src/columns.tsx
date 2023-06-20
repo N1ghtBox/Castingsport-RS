@@ -71,6 +71,8 @@ let scoreWithTime = [
       }
     },
     width:'20%',
+    render: renderEmpty('time')
+
   }
 ]
 
@@ -129,7 +131,8 @@ let scoreDistanceFly = [
 ]
 
 const columns:IColumns = {
-    list:{columns:[
+      list:{
+        columns:[
         ...info.map((column:any)=>{return {...column, editable:true}}),
         {
           title:'Drużyna',
@@ -153,7 +156,8 @@ const columns:IColumns = {
                 },
             } as any
         })
-      ], rules:[]},
+        ], rules:[]
+      },
       D1:{
         columns:[
         ...info,
@@ -293,10 +297,10 @@ const columns:IColumns = {
                 title:`D${i + 1}`,
                 align:'center',
                 render: (_:any, value:any) => {
-                    let discipline = value.disciplines[i]
+                  let discipline = value.disciplines[i]
                     return !value.disqualified ? i + 1 === 5 ? 
                           Math.round(discipline.score * 1.5 * 1000) / 1000 :
-                          discipline.score2 !== undefined ? `${(Math.round(discipline.score * 100) / 100).toFixed(2)}\t${(Math.round(discipline.score2 * 100) / 100).toFixed(2)}` : discipline.score
+                          discipline.score2 > 0 ? `${(Math.round(discipline.score * 100) / 100).toFixed(2)}\t${(Math.round(discipline.score2 * 100) / 100).toFixed(2)}` : discipline.score
                           : 'DNS'
                           
                 },
