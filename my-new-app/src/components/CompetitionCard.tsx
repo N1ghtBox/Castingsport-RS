@@ -49,7 +49,7 @@ const CompetitionCard = (props:IProps) => {
                                 src={props.competition.logo} 
                                 size={100}/>
                             <h4 style={{marginBlock:'10px 5px', textAlign:'center', maxWidth:'100%', wordBreak:'break-word'}}>{props.competition.name}</h4>
-                            <Paragraph style={{marginTop:'auto'}}>01.06.2023 r. - 07.06.2023 r.</Paragraph>
+                            <Paragraph style={{marginTop:'auto'}}>{props.competition.date}</Paragraph>
                         </div>
                     : null
                 }
@@ -58,7 +58,7 @@ const CompetitionCard = (props:IProps) => {
   )
 }
 interface IProps{
-    competition?:{name:string, logo:string},
+    competition?:{name:string, logo:string, date:string},
     addNewCard?:boolean,
     onClick:() => void
 }

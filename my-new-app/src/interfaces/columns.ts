@@ -18,7 +18,9 @@ interface IColumns{
     D7: Columns;
     D8: Columns;
     D9: Columns;
-    T3:Columns;
-    T5:Columns;
+    T10:Columns;
+    T11:Columns;
+    T12:Columns;
+    T13:Columns;
 }
 export default IColumns;

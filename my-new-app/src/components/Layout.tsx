@@ -59,12 +59,20 @@ const tabs: TabsProps['items'] = [
     label: `D9`,
   },
   {
-    key:'T3',
+    key:'T10',
     label:'3-bój'
   },
   {
-    key:'T5',
+    key:'T11',
     label:'5-bój'
+  },
+  {
+    key:'T12',
+    label:'2-bój odległościowy'
+  },
+  {
+    key:'T13',
+    label:'2-bój multi'
   }
 ];
 
@@ -88,9 +96,12 @@ const Layout = () => {
 
 
   useEffect(()=>{
-    setCompetitionInfo({id:state.id, name:state.name, logo:state.logo})
-    setDataSource([...state.competetors]);
-    setInterval(UpdateComp, 1000 * 60 * 5)
+    (async ()=>{
+      let comp = await ipcRenderer.invoke('getById', state);
+      setCompetitionInfo({id:comp.id, name:comp.name, logo:comp.logo})
+      setDataSource([...comp.competetors]);
+      setInterval(UpdateComp, 1000 * 60 )
+    })()
     return () => clearInterval()
   },[state])
 
@@ -127,12 +138,12 @@ const Layout = () => {
       }
 
       if(key.startsWith("T")){
-        setKey(parseInt(key[1]))
+        setKey(parseInt(key.slice(1)))
         setIsList(false)
         setShowResults(true)
         if(selectedCategory  === 'Wszyscy'){
-          setCategoryFilter(() => (value:any) => {return value.category === 'Junior'})
-          setSelectedCategory('Junior')
+          setCategoryFilter(() => (value:any) => {return value.category === 'Kadet'})
+          setSelectedCategory('Kadet')
         }
       }
 
@@ -266,18 +277,21 @@ const Layout = () => {
         })
         let columns = currentColumns.map(column => column.title)
 
+        
         let info = {
-          name: competitionInfo.name,
-          logo:competitionInfo.logo,
+          ...competitionInfo,
           category:selectedCategory,
           dNumber:key,
         }
 
-        navigate('/results', {state:{columns, results:competetors, info}})
+        clearInterval()
+        if(showResults) navigate('/resultsFinals', {state:{columns, results:competetors, info}})
+        else navigate('/results', {state:{columns, results:competetors, info}})
       }
 
       const getFilteredCompetetors = () => {
         return dataSource.filter(competitionFilter).filter(categoryFilter).map((value:DataType) => {
+          if(showResults) return value
           return {
             ...value,
             score:value.disciplines[key - 1].score,
@@ -312,7 +326,11 @@ const Layout = () => {
                   <FloatButton icon={<PrinterOutlined disabled/>} /> 
                 </Tooltip>
                :
-              <FloatButton icon={<PrinterOutlined />} onClick={() => printResults()}/> 
+               dataSource.filter(categoryFilter).length <= 0 ?
+                <Tooltip title="Brak zawodników">
+                  <FloatButton icon={<PrinterOutlined disabled/>} /> 
+                </Tooltip>
+               : <FloatButton icon={<PrinterOutlined />} onClick={() => printResults()}/> 
               : null}
               <FloatButton icon={<SaveOutlined />} onClick={() => UpdateComp()}/>
             </FloatButton.Group>
@@ -358,11 +376,11 @@ const Layout = () => {
                 columns={currentColumns}
                 handleSave={handleSaveScore}
                 rules={rules}
-                dataSource={getFilteredCompetetors()} 
+                dataSource={getFilteredCompetetors() as any} 
                 />
             :
                 <ResultsTable
-                  getScores={key === 3 ? getTotalScoreT3 : getTotalScoreT5}
+                  getScores={key === 10 ? getTotalScoreT3 : getTotalScoreT5}
                   selectedCategory={selectedCategory}
                   handleCategoryChange={handleCategoryChange}
                   columns={currentColumns}

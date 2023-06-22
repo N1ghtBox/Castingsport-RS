@@ -1,12 +1,16 @@
 import { mergeStyleSets } from "@fluentui/merge-styles";
-import { Input, message, Modal } from "antd";
+import { ConfigProvider, DatePicker, Input, message, Modal } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import CompetitionCard from "../components/CompetitionCard";
 import UploadPicture from "../components/UploadPic";
 import { getMessageProps } from "../utils";
+import locale from 'antd/locale/pl_PL'
+import { Dayjs } from "dayjs";
 
 const {ipcRenderer} = window.require('electron')
+
+const { RangePicker } = DatePicker;
 
 const classNames = mergeStyleSets({
     removeWidth:{
@@ -16,6 +20,21 @@ const classNames = mergeStyleSets({
     }
 })
 
+const months = [
+    "Styczeń",
+    "Luty",
+    "Marzec",
+    "Kwiecień",
+    "Maj",
+    "Czerwiec",
+    "Lipiec",
+    "Sierpień",
+    "Wrzesień",
+    "Październik",
+    "Listopad",
+    "Grudzień"
+]
+
 const Start = (props: IProps) => {
     const navigate = useNavigate()
     const [messageApi, contextHolder] = message.useMessage();
@@ -23,6 +42,7 @@ const Start = (props: IProps) => {
     const [isModalOpen, setModalOpen] = useState(false)
     const [newCompName, setNewCompName] = useState('')
     const [logo, setLogo] = useState<string>('')
+    const [date, setDate] = useState<string>('')
 
     useEffect(()=>{
         (async () => {
@@ -39,9 +59,8 @@ const Start = (props: IProps) => {
         })()
     },[])
 
-    const openCompetition = async (id:string) => {
-        let comp = await ipcRenderer.invoke('getById', id)
-        navigate('/scores', {state:comp})
+    const openCompetition = (id:string) => {
+        navigate('/scores', {state:id})
     }
 
     const onCancel = () => {
@@ -50,7 +69,7 @@ const Start = (props: IProps) => {
     }
 
     const onOk = async () => {
-        if(!newCompName){
+        if(!newCompName.trim()){
             messageApi.open(getMessageProps('error','Nie podano nazwy', 2))
             return
         }
@@ -59,10 +78,14 @@ const Start = (props: IProps) => {
             messageApi.open(getMessageProps('error','Nie podano logo', 2))
             return
         }
+        if(!date){
+            messageApi.open(getMessageProps('error','Nie podano daty', 2))
+            return
+        }
         try{
             messageApi.open(getMessageProps('loading','Tworzenie zawodów...', 2))
-            let comp = await ipcRenderer.invoke('createNewComp', {logo, newCompName})
-            navigate('/scores', {state:comp})
+            let comp = await ipcRenderer.invoke('createNewComp', {logo, newCompName, date})
+            navigate('/scores', {state:comp.id})
         }catch (ex){
             console.log(ex)
             if(ex.toString().includes('413')){
@@ -85,11 +108,18 @@ const Start = (props: IProps) => {
                 okButtonProps={{style:{background:'#d9363e'}}}
                 onCancel={onCancel}>
                     <div style={{display:'flex', justifyContent:'space-between', alignItems:'center', gap:'50px'}} className={classNames.removeWidth}>
-                        <Input 
-                            style={{height:'40px'}}
-                            placeholder="Wprowadź nazwę" 
-                            value={newCompName}
-                            onChange={e => setNewCompName(e.target.value)}/>
+                        <div>
+                            <Input 
+                                style={{height:'40px', marginBottom:'15px'}}
+                                placeholder="Wprowadź nazwę" 
+                                value={newCompName}
+                                onChange={e => setNewCompName(e.target.value)}/>
+                            <ConfigProvider locale={locale}>
+                                <RangePicker onChange={(values:[Dayjs, Dayjs]) => {
+                                    setDate(`${values[0].date()}-${values[1].date()} ${months[values[1].month()]} ${values[1].year()}`)
+                                }}/>
+                            </ConfigProvider>
+                        </div>
                         <UploadPicture
                             uploadPicture={pic => setLogo(pic)}
                             />

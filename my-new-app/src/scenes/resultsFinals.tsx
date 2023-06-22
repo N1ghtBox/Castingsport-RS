@@ -1,19 +1,10 @@
-import moment from "moment";
-import { useEffect, useState } from "react"
-import { useLocation } from "react-router-dom";
-import IResult from "../interfaces/IResult";
+import { useEffect, useState } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
+import IResultFinals from "../interfaces/IResultFinals";
+import { getDisciplineRangeForResults, getTotalScoreT12, getTotalScoreT13, getTotalScoreT3, getTotalScoreT5 } from "../utils";
 const { ipcRenderer } = window.require("electron");
 
 let disciplines = [
-    "Mucha cel",
-    "Mucha odległość",
-    "Spinning sprawnościowy 7,5g Arenberg",
-    "Spinning cel 7,5g",
-    "Odległość spinningowa jednoręczna 7,5g.",
-    "Odległość muchowa oburęczna.",
-    "Odległość spinningowa oburęczna 18g",
-    "Multi-cel 18g jednorącz",
-    "Multi-odległość 18g oburęczna",
     "3-bój",
     "5-bój",
     '2-bój odległościowy',
@@ -21,67 +12,79 @@ let disciplines = [
 ]
 
 
-const Results = (props:IProps) => {
+const ResultsFinals = (props:IProps) => {
     const {state} = useLocation()
     const [columns, setColumns] = useState([])
-    const [results, setResults] = useState<IResult[]>([])
+    const [results, setResults] = useState<IResultFinals[]>([])
     const [info, setInfo] = useState<any>()
+    const navigate = useNavigate()
 
     useEffect(()=>{
         setColumns(state.columns)
-        setResults(state.results)
+        let localResults:any[] = state.results
+        localResults = localResults.map((result: any) => {
+            return {
+                ...result,
+                totalScore:getTotalScore(result,state.info.dNumber)
+            }
+        })
+        localResults.sort((a:IResultFinals, b:IResultFinals) => b.totalScore - a.totalScore)
+        setResults(localResults)
         setInfo(state.info);
         (async ()=>{
             await ipcRenderer.invoke('printResults')
+            navigate('/scores',{state:state.info.id})
+            
         })()
     },[state])
 
-    const sortByTime = (a:IResult, b:IResult) => {
-        if(!a.time) return 0
-        let Atime = moment(b.time, 'm.ss.SS')
-        let Btime = moment(b.time, 'm.ss.SS')
-        if (Atime.isBefore(Btime)) return 1
-        if (Atime.isAfter(Btime)) return -1
-        return 0
-         
-    }
-
-    const renderResultOfDiscipline = (result:IResult, index: number) => {
+    const returnResult = (result: IResultFinals, index:number) => {
         return (
             <tr key={result.key}>
                 <td style={{fontWeight:'900', paddingBlock:'10px'}}>
-                    {index+1}
+                    {index + 1}
                 </td>
-                <td>
+                <td style={{width:'5%'}}>
                     {result.startingNumber}
                 </td>
-                <td>
+                <td style={{width:'15%'}}>
                     {result.name}
                 </td>
-                <td>
+                <td style={{width:'20%'}}>
                     {result.club}
                 </td>
-                <td>
-                    {result.score}
-                </td>
-                <td>
-                    {result.time ? result.time : result.score2}
+                {
+                    Object.values(result.disciplines).slice(...getDisciplineRangeForResults(info.dNumber)).map(dis => {
+                        
+                        return (
+                        <td key={dis.number} style={{whiteSpace:'pre'}}>
+                            {`${dis.score}${dis.score2 > 0 ? `\t${dis.score2}` : ''}`}
+                        </td>)
+                    })
+                }
+                <td style={{fontWeight:'400', fontSize:'13px'}}>
+                    {`${result.totalScore.toFixed(3)}`}
                 </td>
             </tr>
         )
     }
 
+    const getTotalScore = (a:any, key:number) => {
+        if(key === 10) return getTotalScoreT3(a)
+        if(key === 11) return getTotalScoreT5(a)
+        if(key === 12) return getTotalScoreT12(a)
+        if(key === 13) return getTotalScoreT13(a)
+        return () => 0
+    }
+
     const getName = () => {
         if(!info) return ''
-        if(info.dNumber < 10) return `Konkurencja ${info.dNumber}`
         if(info.dNumber === 10) return `Konkurencje 3-5`
         if(info.dNumber === 11) return `Konkurencje 1-5`
         if(info.dNumber === 12) return `Konkurencje 6-7`
         if(info.dNumber === 13) return `Konkurencje 8-9`
         return ''
-
     }
-
 
     return (
     <div id="page" style={{display:'flex', flexDirection:'column'}}>
@@ -101,13 +104,16 @@ const Results = (props:IProps) => {
             </div>
             <span style={{marginRight:'5%'}}>
                 <h3 style={{paddingBottom:'15px', borderBottom:'4px solid black', paddingInline:'40px', marginBottom:'5px'}}>{getName()}</h3>
-                <h6 style={{marginTop:0, textAlign:'center'}}>{info ? disciplines[info.dNumber - 1] : ''}</h6>
+                <h6 style={{marginTop:0, textAlign:'center'}}>{info ? disciplines[info.dNumber - 10] : ''}</h6>
             </span>
         </div>
         <div>
             <table style={{width:'100%', borderCollapse:'collapse', fontSize:'11px'}}>
                 <thead style={{borderBottom:'2px solid black !important'}}>
                     <tr>
+                        <th style={{width:'5%'}}>
+                            Zajęte miejsce
+                        </th>
                         {columns.map(name => (
                             <th key={name}>
                                 {name}
@@ -117,7 +123,7 @@ const Results = (props:IProps) => {
                 </thead>
                 <tbody style={{textAlign:'center'}}>
                     {
-                        results.sort(sortByTime).map((result:IResult, index:number) => renderResultOfDiscipline(result,index))
+                        info ? results.map((result:IResultFinals, index:number) => returnResult(result,index))  : null
                     }
                 </tbody>
             </table>
@@ -127,4 +133,4 @@ const Results = (props:IProps) => {
 }
 interface IProps{
 }
-export default Results 
+export default ResultsFinals 
