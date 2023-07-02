@@ -1,15 +1,14 @@
-import { EditOutlined, HomeOutlined, PrinterOutlined, SaveOutlined, SettingOutlined } from "@ant-design/icons";
+import { EditOutlined, FilePdfOutlined, HomeOutlined, PrinterOutlined, SaveOutlined, SettingOutlined } from "@ant-design/icons";
 import { Breadcrumb, ConfigProvider, FloatButton, message, notification, Tabs, TabsProps, Tooltip } from "antd";
 import { Rule } from "antd/es/form";
-import moment from "moment";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import columns from "../columns";
-import { Categories, DisciplinesForCategories } from "../enums";
+import { Categories, DisciplinesForCategories, Teams } from "../enums";
 import Competetors from "../interfaces/competetor";
 import ICompetition from "../interfaces/Competition";
 import DataType from "../interfaces/dataType";
-import { getMessageProps, getTotalScoreT3, getTotalScoreT5 } from "../utils";
+import { checkIfTakesPart, filterByGender, getDisciplineRangeForResults, getMessageProps, getTotalScore } from "../utils";
 import EditableTable from "./EditableTable";
 import EditModal from "./EditModal";
 import ResultsTable from "./ResultsTable";
@@ -78,35 +77,40 @@ const tabs: TabsProps['items'] = [
 
 const Layout = () => {
   const [dataSource, setDataSource] = useState<DataType[]>([]);
-  const [competitionInfo, setCompetitionInfo] = useState<ICompetition>({id:'', name:'', logo:''})
+  const [competitionInfo, setCompetitionInfo] = useState<ICompetition>({id:'', name:'', logo:'', date:'', mainJudge:'', secretaryJudge:''})
   const [currentColumns, setColumns] = useState<any[]>(columns.list.columns)
   const [competitionFilter, setCompetitionFilter] = useState<(value?:any) => boolean>(() => () => true)
   const [categoryFilter, setCategoryFilter] = useState<(value?:any) => boolean>(() => () => true)
   const [selectedCategory, setSelectedCategory] = useState<string>('Wszyscy')
+  const [typeOfTeams, setTypeOfTeams] = useState<string>(Teams.Młodzieżowa)
   const [isList, setIsList] = useState(true)
+  const [intervalId, setIntervalId] = useState<NodeJS.Timer>()
   const [showResults, setShowResults] = useState(false)
   const [modalOpen, setModalOpen] = useState(false)
   const [editEntity, setEditEntity] = useState<DataType | undefined>()
   const [rules, setRules] = useState<Rule[]>([])
   const [key, setKey] = useState(0)
   const [notificationApi, contextHolderNotifications] = notification.useNotification();
+  const [type, setType] = useState<'Indywidualnie' | 'Drużyny'>('Indywidualnie');
   const [messageApi, contextHolderMessages] = message.useMessage();
+  const [tabKey, setTabKey] = useState("list")
   const {state} = useLocation();
   const navigate = useNavigate()
 
 
   useEffect(()=>{
+    if(state.key) onChange(state.key);
     (async ()=>{
-      let comp = await ipcRenderer.invoke('getById', state);
-      setCompetitionInfo({id:comp.id, name:comp.name, logo:comp.logo})
+      let comp = await ipcRenderer.invoke('getById', state.id);
+      setCompetitionInfo({id:comp.id, name:comp.name, logo:comp.logo, date:comp.date, secretaryJudge:comp.secretaryJudge, mainJudge:comp.mainJudge})
       setDataSource([...comp.competetors]);
-      setInterval(UpdateComp, 1000 * 60 )
+      setIntervalId(setInterval(UpdateComp, 1000 * 60 ))
     })()
-    return () => clearInterval()
+    return () => clearInterval(intervalId)
   },[state])
 
   useEffect(()=>{
-    return clearInterval()
+    return clearInterval(intervalId)
   },[])
 
   const UpdateComp = async () => {
@@ -120,6 +124,7 @@ const Layout = () => {
   }
 
     const onChange = (key:string) => {
+      setTabKey(key)
       if(key === "list"){
         setCompetitionFilter(() => () => true)
         setIsList(true)
@@ -155,6 +160,7 @@ const Layout = () => {
         const newData = [...dataSource];
         const index = newData.findIndex((item) => row.key === item.key);
         const item = newData[index];
+
 
         if(item.startingNumber !== row.startingNumber && newData.find((item) => item.startingNumber === row.startingNumber)){
           notificationApi.warning({
@@ -208,9 +214,11 @@ const Layout = () => {
         const newData: DataType = {
           key: `${dataSource.length + 1}`,
           startingNumber:'',
+          girl:false,
           disqualified:false,
           name: ``,
           club: '',
+          team:Teams.Indywidualnie,
           category:Categories.Kadet,
           disciplines:{
             ...Array.from({length:9}, (_:any, i:number) => {
@@ -227,10 +235,12 @@ const Layout = () => {
         setDataSource([...dataSource, newData]);
       };
 
-      const handleCategoryChange = (key:string) => {
-        setSelectedCategory(key)
-        if(key === "Wszyscy") setCategoryFilter(() => () => true)
-        else setCategoryFilter(() => (value:any) => {return value.category === key})
+      const handleCategoryChange = (category:string) => {
+        setSelectedCategory(category)
+        if(category === "Wszyscy") setCategoryFilter(() => () => true)
+        else if (category === "Junior"  && (showResults || (!showResults && !isList && ![3,4,5].includes(key)))) setCategoryFilter(() => (value:any) => {return value.category === category || (value.category === 'Kadet' && !value.girl)})
+        else if (category === "Juniorka"  && (showResults || (!showResults && !isList && ![3,4,5].includes(key)))) setCategoryFilter(() => (value:any) => {return value.category === category || ( value.category === 'Kadet' && value.girl)})
+        else setCategoryFilter(() => (value:any) => {return value.category === category})
       }
       
 
@@ -260,6 +270,15 @@ const Layout = () => {
         setModalOpen(false)
       }
 
+      const onCheck = (value:boolean) => {
+        let localDatasource = [...dataSource]
+        let checkCompetetorIndex = localDatasource.findIndex(data => data.key === editEntity.key)
+        localDatasource[checkCompetetorIndex].girl = value
+        setDataSource([...localDatasource])
+        setEditEntity(undefined)
+        setModalOpen(false)
+      }
+
       const onDisqualify = () => {
         let localDatasource = [...dataSource]
         let competetorToDisqualify = localDatasource.find(data => data.key === editEntity.key)
@@ -270,11 +289,28 @@ const Layout = () => {
         setModalOpen(false)
       }
 
-      const printResults = () => {
-        let competetors = getFilteredCompetetors().sort((a:any,b:any) => {
-          if(!a.score2 || !b.score2) return a.score - b.score
-          return (a.score + a.score2) - (b.score + b.score2)
+      const printResults = async (action:'printResults' | 'exportToPdf') => {
+        await UpdateComp()
+        let competetors = dataSource
+                            .filter(value => type!=='Drużyny' ? categoryFilter(value) : true)
+                            .filter(value => value.category !== selectedCategory && type!=='Drużyny' ? checkIfTakesPart(value,getDisciplineRangeForResults(key)):true)
+                            .map((value:DataType) => {
+                              if(showResults) return value
+                              return {
+                                ...value,
+                                score:value.disciplines[key - 1].score,
+                                score2:value.disciplines[key - 1].score2,
+                                time:value.disciplines[key - 1].time,
+                              }
+                            })
+                            .sort((a:any,b:any) => {
+          if(!a.score2 || !b.score2) return b.score - a.score
+          return (b.score + b.score2) - (a.score + a.score2) 
         })
+
+        if(key === 12 || key === 13) 
+          competetors = dataSource.filter(x => filterByGender(x,selectedCategory) && checkIfTakesPart(x, getDisciplineRangeForResults(key)))
+
         let columns = currentColumns.map(column => column.title)
 
         
@@ -282,11 +318,14 @@ const Layout = () => {
           ...competitionInfo,
           category:selectedCategory,
           dNumber:key,
+          tabKey
         }
 
-        clearInterval()
-        if(showResults) navigate('/resultsFinals', {state:{columns, results:competetors, info}})
-        else navigate('/results', {state:{columns, results:competetors, info}})
+        clearInterval(intervalId)
+        if(showResults) 
+          if(type === 'Indywidualnie') navigate('/resultsFinals', {state:{columns, results:competetors, info, action}})
+          else navigate('/resultsFinalsTeam', {state:{ results:competetors, info:{...info, type:typeOfTeams}, action}})
+        else navigate('/results', {state:{columns, results:competetors, info, action}})
       }
 
       const getFilteredCompetetors = () => {
@@ -323,6 +362,22 @@ const Layout = () => {
               {!isList ? 
                selectedCategory === "Wszyscy" ? 
                 <Tooltip title="Należy wybrać kategorie">
+                  <FloatButton icon={<FilePdfOutlined disabled/>} /> 
+                </Tooltip>
+               :
+               dataSource.filter(categoryFilter).length <= 0 ?
+                <Tooltip title="Brak zawodników">
+                  <FloatButton icon={<FilePdfOutlined disabled/>} /> 
+                </Tooltip>
+               : 
+               <Tooltip title="Wyeksportuj do PDF">
+                <FloatButton icon={<FilePdfOutlined />} onClick={() => printResults('exportToPdf')}/> 
+                </Tooltip>
+              : null}
+
+              {!isList ? 
+               selectedCategory === "Wszyscy" ? 
+                <Tooltip title="Należy wybrać kategorie">
                   <FloatButton icon={<PrinterOutlined disabled/>} /> 
                 </Tooltip>
                :
@@ -330,20 +385,24 @@ const Layout = () => {
                 <Tooltip title="Brak zawodników">
                   <FloatButton icon={<PrinterOutlined disabled/>} /> 
                 </Tooltip>
-               : <FloatButton icon={<PrinterOutlined />} onClick={() => printResults()}/> 
+               : 
+               <Tooltip title="Wydrukuj">
+                <FloatButton icon={<PrinterOutlined />} onClick={() => printResults('printResults')}/> 
+               </Tooltip>
               : null}
-              <FloatButton icon={<SaveOutlined />} onClick={() => UpdateComp()}/>
+              <Tooltip title="Zapisz">
+                <FloatButton icon={<SaveOutlined />} onClick={() => UpdateComp()}/>
+              </Tooltip>
             </FloatButton.Group>
           </ConfigProvider>
           <Breadcrumb
             style={{marginLeft:16}}
             items={[
               {
-                href: '/main_window',
                 title: <HomeOutlined />,
                 onClick: async () => {
                   await UpdateComp()
-                  navigate('/main_window')
+                  navigate('/')
                 }
               },
               {
@@ -357,6 +416,7 @@ const Layout = () => {
               editEntity={editEntity}
               onCancel={onCancel}
               onDelete={onDelete}
+              onCheck={onCheck}
               onDisqualify={onDisqualify}
             />
             {contextHolderMessages}
@@ -376,15 +436,36 @@ const Layout = () => {
                 columns={currentColumns}
                 handleSave={handleSaveScore}
                 rules={rules}
-                dataSource={getFilteredCompetetors() as any} 
+                finalKey={key}
+                dataSource={[6,7,8,9].includes(key) ? 
+                  dataSource.filter(x => filterByGender(x, selectedCategory) && x.disciplines[key - 1].takesPart).map(value => {return {
+                    ...value,
+                    score:value.disciplines[key - 1].score,
+                    score2:value.disciplines[key - 1].score2,
+                    time:value.disciplines[key - 1].time,
+                  }})
+                  : getFilteredCompetetors() as any} 
                 />
             :
                 <ResultsTable
-                  getScores={key === 10 ? getTotalScoreT3 : getTotalScoreT5}
+                  finalKey={key}
+                  type={type}
+                  setType={setType}
+                  disciplineRange={getDisciplineRangeForResults(key)}
+                  getScores={getTotalScore(key)}
                   selectedCategory={selectedCategory}
+                  selectedTeamType={typeOfTeams}
                   handleCategoryChange={handleCategoryChange}
+                  handleTeamTypeChange={(key:string) => setTypeOfTeams(key)}
                   columns={currentColumns}
-                  dataSource={dataSource.filter(categoryFilter)} />
+                  dataSource={dataSource.filter(
+                    key === 12 || key === 13 ? 
+                    value => filterByGender(value, selectedCategory) 
+                    : 
+                    type === 'Drużyny' ? 
+                    () => true
+                    :
+                    categoryFilter)} />
             }
             <div style={{display:'flex', position:'absolute', width:'50%', left:0, bottom:0}}>
               <Tabs 
@@ -392,7 +473,7 @@ const Layout = () => {
                 tabBarStyle={{margin:0}}
                 type="card"
                 onChange={onChange}
-                defaultActiveKey="1" 
+                activeKey={tabKey} 
                 items={tabs}/>
             </div>
         </div>

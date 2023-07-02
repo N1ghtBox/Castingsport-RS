@@ -1,5 +1,6 @@
 import { CheckOutlined, CloseOutlined } from "@ant-design/icons";
 import moment from "moment";
+import { Teams } from "./enums";
 import IColumns from "./interfaces/columns";
 import Competetors from "./interfaces/competetor";
 import { getTotalScoreT12, getTotalScoreT13, getTotalScoreT3, getTotalScoreT5 } from "./utils";
@@ -17,6 +18,8 @@ let info = [
     dataIndex: 'startingNumber',
     width:'5%',
     align:'center',
+    sorter: (a:any,b:any) => a.startingNumber - b.startingNumber, 
+    showSorterTooltip:false,
     render: renderEmpty('startingNumber')
   },
   {
@@ -61,7 +64,8 @@ let scoreWithTime = [
       multiple:1,
       compare: (a:any,b:any) => {
         let time = moment(b.time, 'm.ss.SS')
-        return moment(a.time, 'm.ss.SS').subtract({minutes:time.minutes(), seconds:time.seconds(), milliseconds:time.milliseconds()})
+	let difference = moment(a.time, 'm.ss.SS').diff(time)
+        return difference
       }
     },
     width:'20%',
@@ -127,13 +131,15 @@ let scoreDistanceFly = [
 const columns:IColumns = {
       list:{
         columns:[
-        ...info.map((column:any)=>{return {...column, editable:true}}),
+        ...info.map((column:any) => {return {...column, editable:true}}),
         {
           title:'Drużyna',
           dataIndex:'team',
           align:'center',
           editable:true,
-          render:renderEmpty('team') 
+          render: (value:keyof typeof Teams) => {
+            return `${Teams[value]}` 
+          }
         },
         {
           title: 'Kategoria',
@@ -282,6 +288,7 @@ const columns:IColumns = {
           },
           defaultSortOrder:'descend',
           sortOrder:'descend',
+          sortDirections:['descend'],
           render: (_:any, value:any) => {
             let totalScore =  getTotalScoreT3(value)
             return !value.disqualified ? totalScore.toFixed(3) : '---'
@@ -316,6 +323,7 @@ const columns:IColumns = {
           },
           defaultSortOrder:'descend',
           sortOrder:'descend',
+          sortDirections:['descend'],
           render: (_:any, value:any) => {
             let totalScore =  getTotalScoreT5(value)
             return !value.disqualified ? totalScore.toFixed(3) : 'DNS'
@@ -333,7 +341,9 @@ const columns:IColumns = {
                 align:'center',
                 render: (_:any, value:any) => {
                     let discipline = value.disciplines[i + 5]
-                    return !value.disqualified ? Math.round(discipline.score * 1500) /1000 : 'DNS'
+			let score = discipline.score
+			if(i + 5 === 6) score = Math.round(discipline.score * 1500) /1000
+                    return !value.disqualified ? discipline.score2 ? `${score}\t${discipline.score2}` : `${score}` : 'DNS'
                 },
             } as any
         }),
@@ -346,6 +356,7 @@ const columns:IColumns = {
           },
           defaultSortOrder:'descend',
           sortOrder:'descend',
+          sortDirections:['descend'],
           render: (_:any, value:any) => {
             let totalScore =  getTotalScoreT12(value)
             return !value.disqualified ? totalScore.toFixed(3) : '---'
@@ -376,6 +387,7 @@ const columns:IColumns = {
           },
           defaultSortOrder:'descend',
           sortOrder:'descend',
+          sortDirections:['descend'],
           render: (_:any, value:any) => {
             let totalScore =  getTotalScoreT13(value)
             return !value.disqualified ? totalScore.toFixed(3) : '---'

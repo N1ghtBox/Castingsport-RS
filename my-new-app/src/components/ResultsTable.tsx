@@ -1,20 +1,21 @@
 import { Select, Table } from 'antd';
 import { useEffect, useState } from 'react';
-import { Categories } from '../enums';
+import { checkIfTakesPart, getCategoriesForDiscipline, mapToTeams } from '../utils';
+import { Categories, Teams } from '../enums';
 import DataType from '../interfaces/dataType';
 
 type EditableTableProps = Parameters<typeof Table>[0];
 
 type ColumnTypes = Exclude<EditableTableProps['columns'], undefined>;
 
-const teamResultsColumns:ColumnTypes = [
+export const teamResultsColumns:ColumnTypes = [
     {
         title:'Drużyna',
         dataIndex:'teamName',
         align:'center'
     },
     {
-        title:'Team',
+        title:'Drużyna',
         dataIndex:'team',
         align:'center'
     },
@@ -30,72 +31,103 @@ const teamResultsColumns:ColumnTypes = [
         sorter:(a:any,b:any) => {
             return a.total - b.total
         },
+        render: value => {
+            return `${value ? value.toFixed(3) : ''}`
+        },
         defaultSortOrder:'descend',
         sortOrder:'descend',
     },
     
 ]
 
-type team = {team:string, scores:string, total:number, teamName:string}
+type team = {team:string, scores:string, total:number, teamName:string, key:React.Key}
+
 
 const ResultsTable = (props: IProps) => {
-    const [type, setType] = useState<'Indywidualnie' | 'Drużyny'>('Indywidualnie');
     const [results, setResults] = useState<any[]>(props.dataSource)
 
     const changeType = (key:'Indywidualnie' | 'Drużyny') => {
-        setType(key)
-        if(key === 'Indywidualnie') setResults(props.dataSource)
+        if(key === 'Indywidualnie'){
+            let localDatasource = [...props.dataSource]
+            if(props.selectedCategory === 'Junior'){
+                setResults(localDatasource.filter(value => {
+                    if(value.category === Categories.Junior) return true
+                    if(value.girl) return false
+                    return checkIfTakesPart(value, props.disciplineRange)
+                }))
+            } 
+            else if(props.selectedCategory === 'Juniorka'){
+                setResults(localDatasource.filter(value => {
+                    if(value.category === Categories.Juniorka) return true
+                    if(!value.girl) return false
+                    return checkIfTakesPart(value, props.disciplineRange)
+                }))
+            }
+            else {
+                setResults(localDatasource.filter(value => {
+                    return checkIfTakesPart(value, props.disciplineRange)
+                }))
+            }
+        }
         else{
             let competetorsGroupByTeam:team[] = []
-            props.dataSource.forEach(value => {
-                if(!value.team) return
-                let teamIndex = competetorsGroupByTeam.findIndex(team => team.teamName === value.team)
-                if(teamIndex >= 0){
-                    let localTeam = competetorsGroupByTeam[teamIndex]
-                    localTeam.scores += `${props.getScores(value)}\n`
-                    localTeam.team += `${value.startingNumber} ${value.name}\n`
-                    localTeam.total += props.getScores(value)
-                }else{
-                    competetorsGroupByTeam.push({
-                        scores: `${props.getScores(value)}\n`,
-                        team:`${value.startingNumber} ${value.name}\n`,
-                        total: props.getScores(value),
-                        teamName:`${value.team}`
-                    })
-                }
-            })
-            setResults(competetorsGroupByTeam)
+            props.dataSource.forEach(value => mapToTeams(value, competetorsGroupByTeam, props.getScores, props.selectedTeamType))
+            setResults([...competetorsGroupByTeam])
         }
     }
-
     useEffect(()=>{
-        changeType(type)
-    },[props.getScores])
+        changeType(props.type)
+    },[props.getScores, props.dataSource])
 
-    useEffect(()=>{
-        setResults(props.dataSource)
-    },[props.dataSource])
+    const createCateogries = () => {
+        let categories = [
+            ...Object.keys(Categories).slice(...getCategoriesForDiscipline(props.finalKey))
+            .map(key => {
+              return {
+                  label:key,
+                  value: key,
+              }
+          })]
+        
+        if(!categories.find( value => value.label === props.selectedCategory)){
+            props.handleCategoryChange(categories[0].value)
+        }
+        return categories
+    }
 
     return (
         <div>
             <div style={{display:"flex", height:"5vh", alignItems:'center', gap:'30px'}}>
+                {
+                    props.type !== 'Drużyny' ? 
+                        <Select
+                        style={{ width: 120, marginLeft: 16 }}
+                        onChange={props.handleCategoryChange}
+                        value={props.selectedCategory}
+                        options={createCateogries()}
+                        />
+                        : 
+
+                        <Select
+                            style={{ width: 120, marginLeft: 16 }}
+                            onChange={props.handleTeamTypeChange}
+                            value={props.selectedTeamType}
+                            options={Object.keys(Teams).slice(1).map(key => {
+                                return {
+                                    label:key,
+                                    value:key
+                                }
+                            })}
+                            />
+                }
+                
                 <Select
                     style={{ width: 120, marginLeft: 16 }}
-                    onChange={props.handleCategoryChange}
-                    value={props.selectedCategory}
-                    options={[
-                      ...Object.keys(Categories).map(key => {
-                        return {
-                            label:key,
-                            value: key,
-                        }
-                    })]
-                  }
-                    />
-                <Select
-                    style={{ width: 120, marginLeft: 16 }}
-                    onChange={changeType}
-                    value={type}
+                    onChange={(value: any) =>{
+                        props.setType(value); 
+                        changeType(value)
+                    }}
+                    value={props.type}
                     options={[
                         {
                             label:'Indywidualnie',
@@ -112,10 +144,10 @@ const ResultsTable = (props: IProps) => {
                 rowClassName={() => 'border'}
                 bordered
                 showSorterTooltip={false}
-                pagination={{ pageSize: 20 }}
+                pagination={{ pageSize: props.type ==='Drużyny' ? 10 : 16 }}
                 style={{ maxHeight: "95vh", height: "calc(95vh - 22px)", whiteSpace:'pre' }}
                 dataSource={results}
-                columns={type ==='Drużyny' ? teamResultsColumns : props.columns as ColumnTypes}
+                columns={props.type ==='Drużyny' ? teamResultsColumns : props.columns as ColumnTypes}
             />
         </div>
     )
@@ -126,7 +158,13 @@ interface IProps {
     columns: (ColumnTypes[number] & { editable?: boolean; dataIndex: string; })[]
     handleCategoryChange: (key:string) => void
     selectedCategory: string
+    selectedTeamType: string
+    handleTeamTypeChange: (key:string) => void,
     getScores:(value:DataType) => number
+    type:'Indywidualnie' | 'Drużyny'
+    setType:(value:'Indywidualnie' | 'Drużyny') => void
+    disciplineRange: [number, number]
+    finalKey:number,
 }
 
 export default ResultsTable;

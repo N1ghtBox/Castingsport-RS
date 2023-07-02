@@ -5,6 +5,7 @@ import Competetors from '../interfaces/competetor';
 import DataType from '../interfaces/dataType';
 import { Categories } from '../enums';
 import { MaskedInput } from 'antd-mask-input';
+import { getCategoriesForDiscipline } from '../utils';
 
 const EditableContext = React.createContext<FormInstance<any> | null>(null);
 
@@ -135,6 +136,22 @@ const ScoreTable = (props: IProps) => {
         };
     });
 
+    const createCateogries = () => {
+        let categories = [
+            ...Object.keys(Categories).slice(...getCategoriesForDiscipline(props.finalKey))
+            .map(key => {
+              return {
+                  label:key,
+                  value: key,
+              }
+          })]
+        
+        if(!categories.find( value => value.label === props.selectedCategory)){
+            props.handleCategoryChange(categories[0].value)
+        }
+        return categories
+    }
+
     return (
         <div>
             <div style={{display:"flex", height:"5vh", alignItems:'center', gap:'30px'}}>
@@ -147,12 +164,7 @@ const ScoreTable = (props: IProps) => {
                         label:'Wszyscy',
                         value:'Wszyscy',
                       },
-                      ...Object.keys(Categories).map(key => {
-                        return {
-                            label:key,
-                            value: key,
-                        }
-                    })]
+                      ...createCateogries()]
                   }
                     />
             </div>
@@ -161,7 +173,7 @@ const ScoreTable = (props: IProps) => {
                 rowClassName={() => 'editable-row border'}
                 bordered
                 showSorterTooltip={false}
-                pagination={{ pageSize: 20 }}
+                pagination={{ pageSize: 16 }}
                 style={{ maxHeight: "95vh", height: "calc(95vh - 22px)" }}
                 dataSource={props.dataSource}
                 columns={columns as ColumnTypes}
@@ -175,6 +187,7 @@ interface IProps {
     handleSave: (row: Competetors) => void
     columns: (ColumnTypes[number] & { editable?: boolean; dataIndex: string; })[]
     rules:Rule[]
+    finalKey:number
     handleCategoryChange: (key:string) => void
     selectedCategory: string
 }

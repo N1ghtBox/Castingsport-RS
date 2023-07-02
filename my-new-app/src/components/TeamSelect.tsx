@@ -27,7 +27,11 @@ const TeamSelect = (props:IProps) => {
       <Select
         style={{ width: 200 }}
         placeholder="Drużyna"
-        onSelect={(value:any) => props.save(value)}
+        onSelect={props.save}
+        open
+        onKeyDown={e => {
+          if(e.code == "Escape") props.save('')
+        }}
         dropdownRender={(menu) => (
           <>
             {menu}

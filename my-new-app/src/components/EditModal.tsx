@@ -1,4 +1,5 @@
-import { Modal, Button } from "antd"
+import { Modal, Button, Checkbox } from "antd"
+import { Categories } from "../enums"
 import DataType from "../interfaces/dataType"
 
 const EditModal = (props:IProps) => {
@@ -27,12 +28,22 @@ const EditModal = (props:IProps) => {
             Usuń
           </Button>,
         ]}
-      />
+      >
+        {
+          props.editEntity && props.editEntity.category === Categories.Kadet ?
+            <Checkbox onChange={e => props.onCheck(e.target.checked)} checked={props.editEntity && props.editEntity.girl}>
+              Kadetka
+            </Checkbox>
+            :null
+        }
+        
+      </Modal>
   )
 }
 interface IProps{
     open:boolean
     onDisqualify:() => void
+    onCheck: (value:boolean) => void
     onDelete: () => void
     onCancel: () => void
     editEntity:DataType

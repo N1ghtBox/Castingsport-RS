@@ -60,7 +60,7 @@ const Start = (props: IProps) => {
     },[])
 
     const openCompetition = (id:string) => {
-        navigate('/scores', {state:id})
+        navigate('/scores', {state:{id}})
     }
 
     const onCancel = () => {
@@ -84,10 +84,9 @@ const Start = (props: IProps) => {
         }
         try{
             messageApi.open(getMessageProps('loading','Tworzenie zawodów...', 2))
-            let comp = await ipcRenderer.invoke('createNewComp', {logo, newCompName, date})
-            navigate('/scores', {state:comp.id})
+            let comp = await ipcRenderer.invoke('createNewComp', {logo, name:newCompName, date})
+            navigate('/scores', {state:comp})
         }catch (ex){
-            console.log(ex)
             if(ex.toString().includes('413')){
                 messageApi.open(getMessageProps('error','Zbyt duży plik', 4))
                 return
@@ -116,7 +115,7 @@ const Start = (props: IProps) => {
                                 onChange={e => setNewCompName(e.target.value)}/>
                             <ConfigProvider locale={locale}>
                                 <RangePicker onChange={(values:[Dayjs, Dayjs]) => {
-                                    setDate(`${values[0].date()}-${values[1].date()} ${months[values[1].month()]} ${values[1].year()}`)
+                                    setDate(`${values[0].date()}-${values[1].date()} ${months[values[1].month()]} ${values[1].year()} r.`)
                                 }}/>
                             </ConfigProvider>
                         </div>

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import IResultFinals from "../interfaces/IResultFinals";
-import { getDisciplineRangeForResults, getTotalScoreT12, getTotalScoreT13, getTotalScoreT3, getTotalScoreT5 } from "../utils";
+import { checkIfTakesPart, getDisciplineRangeForResults, getTotalScore } from "../utils";
 const { ipcRenderer } = window.require("electron");
 
 let disciplines = [
@@ -25,18 +25,32 @@ const ResultsFinals = (props:IProps) => {
         localResults = localResults.map((result: any) => {
             return {
                 ...result,
-                totalScore:getTotalScore(result,state.info.dNumber)
+                totalScore:getTotalScore(state.info.dNumber)(result)
             }
         })
         localResults.sort((a:IResultFinals, b:IResultFinals) => b.totalScore - a.totalScore)
+        localResults.filter(value => checkIfTakesPart(value, getDisciplineRangeForResults(state.info.dNumber)))
         setResults(localResults)
         setInfo(state.info);
         (async ()=>{
-            await ipcRenderer.invoke('printResults')
-            navigate('/scores',{state:state.info.id})
+            ipcRenderer.invoke(state.action, `${disciplines[state.info.dNumber - 10]}_${state.info.category}.pdf`)
             
         })()
     },[state])
+    
+    useEffect(()=>{
+        document.addEventListener('keydown', ev => {
+            if(ev.code === 'Escape') navigate('/scores',{state:{id:state.info.id, key:state.info.tabKey}})
+        })
+        ipcRenderer.addListener('success', ()=>{
+            navigate('/scores',{state:{id:state.info.id, key:state.info.tabKey}})
+        })
+        return () => {
+            document.removeEventListener('keydown',() => {})
+            ipcRenderer.removeAllListeners('success')
+
+        }
+    },[])
 
     const returnResult = (result: IResultFinals, index:number) => {
         return (
@@ -58,7 +72,7 @@ const ResultsFinals = (props:IProps) => {
                         
                         return (
                         <td key={dis.number} style={{whiteSpace:'pre'}}>
-                            {`${dis.score}${dis.score2 > 0 ? `\t${dis.score2}` : ''}`}
+                            {`${[5,7,9].includes(dis.number) ? Math.round(dis.score * 1500) / 1000 : dis.score}${dis.score2 > 0 ? `\t${dis.score2}` : ''}`}
                         </td>)
                     })
                 }
@@ -67,14 +81,6 @@ const ResultsFinals = (props:IProps) => {
                 </td>
             </tr>
         )
-    }
-
-    const getTotalScore = (a:any, key:number) => {
-        if(key === 10) return getTotalScoreT3(a)
-        if(key === 11) return getTotalScoreT5(a)
-        if(key === 12) return getTotalScoreT12(a)
-        if(key === 13) return getTotalScoreT13(a)
-        return () => 0
     }
 
     const getName = () => {
@@ -95,7 +101,7 @@ const ResultsFinals = (props:IProps) => {
             </span>
             <span style={{marginRight:'5%'}}>
                 <h3 style={{paddingBottom:'15px', borderBottom:'4px solid black', marginBottom:'5px', textAlign:'center'}}>{info ? info.name : ''}</h3>
-                <h6 style={{marginTop:0, textAlign:'center'}}>Błonie, 12-14 sierpień 2016 r.</h6>
+                <h6 style={{marginTop:0, textAlign:'center'}}>{info ? info.date : ''}</h6>
             </span>
         </div>
         <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
@@ -108,9 +114,9 @@ const ResultsFinals = (props:IProps) => {
             </span>
         </div>
         <div>
-            <table style={{width:'100%', borderCollapse:'collapse', fontSize:'11px'}}>
-                <thead style={{borderBottom:'2px solid black !important'}}>
-                    <tr>
+            <table style={{width:'100%', borderCollapse:'collapse', fontSize:'11px',borderBottom:'2px solid black'}}>
+                <thead >
+                    <tr style={{borderBottom:'2px solid black'}}>
                         <th style={{width:'5%'}}>
                             Zajęte miejsce
                         </th>
@@ -127,6 +133,16 @@ const ResultsFinals = (props:IProps) => {
                     }
                 </tbody>
             </table>
+            <div style={{display:'flex', justifyContent:'space-between',marginTop:'15px', marginInline:'15px'}}>
+                <span style={{fontSize:'14px'}}>
+                    Sędzia główny<br/><br/>
+                    {state.info.mainJudge}
+                </span>
+                <span style={{fontSize:'14px'}}>
+                    Sędzia sekretarz<br/><br/>
+                    {state.info.secretaryJudge}
+                </span>
+            </div>
         </div>
     </div>
   )

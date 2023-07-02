@@ -1,8 +1,8 @@
 import React, { useContext, useEffect, useRef, useState } from 'react';
-import { Checkbox, InputRef, Select } from 'antd';
+import { Checkbox, CheckboxRef, InputRef, Select } from 'antd';
 import { Button, Form, Input, Table } from 'antd';
 import type { FormInstance } from 'antd/es/form';
-import { Categories } from '../enums';
+import { Categories, Teams } from '../enums';
 import DataType from '../interfaces/dataType';
 import { PlusOutlined } from '@ant-design/icons';
 import TeamSelect from './TeamSelect';
@@ -55,7 +55,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
     }
   }, [editing]);
 
-  const toggleEdit = () => {
+  const toggleEdit = async () => {
     setEditing(!editing);
     if(dataIndex.startsWith("D")){
       form.setFieldsValue({ disciplines: record.disciplines })
@@ -102,6 +102,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
                   onBlur={save}
                   onSelect={save}
                   onDeselect={save}
+                  open
                   options={Object.keys(Categories).map(key => {
                       return {
                           label:key,
@@ -110,10 +111,19 @@ const EditableCell: React.FC<EditableCellProps> = ({
                   })}
                   /> :
             dataIndex === 'team' ?
-              <TeamSelect
-                  teams={[...new Set(dataSource.filter(value => value.team).filter(value => value.club == record.club).map(value => value.team))]}
-                  save={save}
-                />
+              <Select
+              style={{ width: 120 }}
+              onBlur={save}
+              onSelect={save}
+              onDeselect={save}
+              open
+              options={Object.keys(Teams).map((key:any) => {
+                  return {
+                      label:Teams[key as keyof typeof Teams],
+                      value: key,
+                  }
+              })}
+              />
             :
             dataIndex.startsWith("D")?
               <Checkbox 
@@ -200,7 +210,7 @@ const EditableTable = (props: IProps) => {
               components={components}
               rowClassName={() => 'editable-row border'}
               bordered
-              pagination={{pageSize:20}}
+              pagination={{pageSize:16}}
               style={{maxHeight:"95vh", height:"calc(95vh - 22px)", whiteSpace:'pre'}}
               dataSource={props.dataSource}
               columns={columns as ColumnTypes}

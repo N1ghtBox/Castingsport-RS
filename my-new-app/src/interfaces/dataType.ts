@@ -1,4 +1,4 @@
-import { Categories } from "../enums";
+import { Categories, Teams } from "../enums";
 
 interface competition{
     number:number,
@@ -15,7 +15,8 @@ interface DataType {
     name: string;
     club: string;
     category: Categories;
-    team?:string;
+    team:Teams;
+    girl:boolean;
     disciplines: competition[]
 }
 export default DataType

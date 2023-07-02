@@ -3,7 +3,7 @@ export enum Categories{
     Junior = "Junior",
     Juniorka = "Juniorka",
     Senior = "Senior",
-    Seniorka = "Seniorka",
+    Kobieta = "Kobieta",
 }
 
 export enum DisciplinesForCategories{
@@ -11,5 +11,12 @@ export enum DisciplinesForCategories{
   Junior = 5,
   Juniorka = 5,
   Senior = 5,
-  Seniorka = 5,
+  Kobieta = 5,
+}
+
+export enum Teams{
+  Indywidualnie = "Indywidualnie",
+  Młodzieżowa = "Młodzieżowa",
+  Seniorów = "Seniorów",
+  Kobiet = "Kobiet",
 }

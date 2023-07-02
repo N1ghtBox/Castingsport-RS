@@ -1,19 +1,10 @@
-import moment from "moment";
-import { useEffect, useState } from "react"
+import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
-import IResult from "../interfaces/IResult";
+import IResultFinalsTeam from "../interfaces/IResultFinalsTeam";
+import { getTotalScore, mapToTeams } from "../utils";
 const { ipcRenderer } = window.require("electron");
 
 let disciplines = [
-    "Mucha cel",
-    "Mucha odległość",
-    "Spinning sprawnościowy 7,5g Arenberg",
-    "Spinning cel 7,5g",
-    "Odległość spinningowa jednoręczna 7,5g.",
-    "Odległość muchowa oburęczna.",
-    "Odległość spinningowa oburęczna 18g",
-    "Multi-cel 18g jednorącz",
-    "Multi-odległość 18g oburęczna",
     "3-bój",
     "5-bój",
     '2-bój odległościowy',
@@ -21,21 +12,11 @@ let disciplines = [
 ]
 
 
-const Results = (props:IProps) => {
+const ResultsFinals = (props:IProps) => {
     const {state} = useLocation()
-    const [columns, setColumns] = useState([])
-    const [results, setResults] = useState<IResult[]>([])
+    const [results, setResults] = useState<IResultFinalsTeam[]>([])
     const [info, setInfo] = useState<any>()
     const navigate = useNavigate()
-
-    useEffect(()=>{
-        setColumns(state.columns)
-        setResults(state.results)
-        setInfo(state.info);
-        (async ()=>{
-            await ipcRenderer.invoke(state.action, `Konkurencja-${state.info.dNumber}_${state.info.category}.pdf`)
-        })()
-    },[state])
 
     useEffect(()=>{
         document.addEventListener('keydown', ev => {
@@ -51,33 +32,35 @@ const Results = (props:IProps) => {
         }
     },[])
 
-    const sortByTime = (a:IResult, b:IResult) => {
-        let time = moment(b.time, 'm.ss.SS')
-	let difference = moment(a.time, 'm.ss.SS').diff(time)
-        return difference
-         
-    }
+    useEffect(()=>{
+        let localResults:any[] = []
+        console.log(state.results)
+        state.results.forEach((result: any) => mapToTeams(result,localResults, getTotalScore(state.info.dNumber),state.info.type))
+        localResults.sort((a:IResultFinalsTeam, b:IResultFinalsTeam) => b.total - a.total)
+        setResults(localResults)
+        setInfo(state.info);
+        (async ()=>{
+            ipcRenderer.invoke(state.action, `Drużyna_${state.info.type}.pdf`)
+        })()
+    },[state])
 
-    const renderResultOfDiscipline = (result:IResult, index: number) => {
+    const returnResult = (result: IResultFinalsTeam, index:number) => {
         return (
             <tr key={result.key}>
-                <td style={{fontWeight:'900', paddingBlock:'10px'}}>
-                    {index+1}
+                <td style={{fontWeight:'900', paddingBlock:'10px',border:'2px solid black'}}>
+                    {index + 1}
                 </td>
-                <td>
-                    {result.startingNumber}
+                <td style={{width:'25%',border:'2px solid black', whiteSpace:'pre'}}>
+                    {result.teamName}
                 </td>
-                <td>
-                    {result.name}
+                <td style={{width:'25%',border:'2px solid black', whiteSpace:'pre'}}>
+                    {result.team}
                 </td>
-                <td>
-                    {result.club}
+                <td style={{width:'20%',border:'2px solid black', whiteSpace:'pre'}}>
+                    {result.scores}
                 </td>
-                <td>
-                    {result.score}
-                </td>
-                <td>
-                    {result.time ? result.time : result.score2}
+                <td style={{fontWeight:'400', fontSize:'13px',border:'2px solid black', width:'10%'}}>
+                    {`${result.total.toFixed(3)}`}
                 </td>
             </tr>
         )
@@ -85,15 +68,12 @@ const Results = (props:IProps) => {
 
     const getName = () => {
         if(!info) return ''
-        if(info.dNumber < 10) return `Konkurencja ${info.dNumber}`
         if(info.dNumber === 10) return `Konkurencje 3-5`
         if(info.dNumber === 11) return `Konkurencje 1-5`
         if(info.dNumber === 12) return `Konkurencje 6-7`
         if(info.dNumber === 13) return `Konkurencje 8-9`
         return ''
-
     }
-
 
     return (
     <div id="page" style={{display:'flex', flexDirection:'column'}}>
@@ -109,30 +89,37 @@ const Results = (props:IProps) => {
         </div>
         <div style={{display:'flex', alignItems:'center', justifyContent:'space-between'}}>
             <div style={{backgroundColor:'aqua', height:'fit-content',padding:'10px 50px', marginLeft:'15%', fontSize:'larger', fontWeight:'800'}}>
-                {info ? info.category : ''}
+                {info ? `Drużyna - ${state.info.type}` : ''}
             </div>
             <span style={{marginRight:'5%'}}>
                 <h3 style={{paddingBottom:'15px', borderBottom:'4px solid black', paddingInline:'40px', marginBottom:'5px'}}>{getName()}</h3>
-                <h6 style={{marginTop:0, textAlign:'center'}}>{info ? disciplines[info.dNumber - 1] : ''}</h6>
+                <h6 style={{marginTop:0, textAlign:'center'}}>{info ? disciplines[info.dNumber - 10] : ''}</h6>
             </span>
         </div>
         <div>
             <table style={{width:'100%', borderCollapse:'collapse', fontSize:'11px',borderBottom:'2px solid black'}}>
-                <thead style={{borderBottom:'2px solid black !important'}}>
-                    <tr>
-			<th>
-				Zajęte miejsce
-			</th>
-                        {columns.map(name => (
-                            <th key={name}>
-                                {name}
-                            </th>
-                        ) )}
+                <thead >
+                    <tr style={{borderBottom:'2px solid black'}}>
+                        <th style={{width:'5%', border:'2px solid black'}}>
+                            Zajęte miejsce
+                        </th>
+                        <th style={{border:'2px solid black'}}>
+                            Nazwa
+                        </th>
+                        <th style={{border:'2px solid black'}}>
+                            Skład
+                        </th>
+                        <th style={{border:'2px solid black'}}>
+                            Wyniki
+                        </th>
+                        <th style={{border:'2px solid black'}}>
+                            Razem
+                        </th>
                     </tr>
                 </thead>
                 <tbody style={{textAlign:'center'}}>
                     {
-                        results.sort(sortByTime).sort((a:any,b:any) => b.score - a.score).map((result:IResult, index:number) => renderResultOfDiscipline(result,index))
+                        info ? results.map((result:IResultFinalsTeam, index:number) => returnResult(result,index))  : null
                     }
                 </tbody>
             </table>
@@ -152,4 +139,4 @@ const Results = (props:IProps) => {
 }
 interface IProps{
 }
-export default Results 
+export default ResultsFinals 
