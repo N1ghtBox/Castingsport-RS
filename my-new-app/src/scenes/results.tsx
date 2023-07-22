@@ -3,6 +3,7 @@ import { useEffect, useState } from "react"
 import { useLocation, useNavigate } from "react-router-dom";
 import IResult from "../interfaces/IResult";
 const { ipcRenderer } = window.require("electron");
+import 'moment/locale/pl'
 
 let disciplines = [
     "Mucha cel",
@@ -22,6 +23,7 @@ let disciplines = [
 
 
 const Results = (props:IProps) => {
+    moment.locale('pl')
     const {state} = useLocation()
     const [columns, setColumns] = useState([])
     const [results, setResults] = useState<IResult[]>([])
@@ -140,6 +142,9 @@ const Results = (props:IProps) => {
                 <span style={{fontSize:'14px'}}>
                     Sędzia główny<br/><br/>
                     {state.info.mainJudge}
+                </span>
+                <span style={{fontSize:'14px'}}>
+                    {moment().format('Do MMMM YYYY, hh:mm')}
                 </span>
                 <span style={{fontSize:'14px'}}>
                     Sędzia sekretarz<br/><br/>

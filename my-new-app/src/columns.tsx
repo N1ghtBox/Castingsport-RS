@@ -3,7 +3,7 @@ import moment from "moment";
 import { Teams } from "./enums";
 import IColumns from "./interfaces/columns";
 import Competetors from "./interfaces/competetor";
-import { getTotalScoreT12, getTotalScoreT13, getTotalScoreT3, getTotalScoreT5 } from "./utils";
+import { checkIfTakesPart, getDisciplineRangeForResults, getTotalScoreT12, getTotalScoreT13, getTotalScoreT3, getTotalScoreT5 } from "./utils";
 
 const renderEmpty = (nameOfDataIndex:string) => {
   return (_:any, record:any) => {
@@ -148,21 +148,68 @@ const columns:IColumns = {
           editable:true,
           render: renderEmpty('category')
         },
-        ...Array.from({length:9}, (_:any, i: number) => {
-            return {
-                title:`D${i + 1}`,
-                dataIndex:`D${i + 1}`,
-                editable:true,
-                align:'center',
-                render: (_:any, value:any) => {
-                    let discipline = value.disciplines[i]
-                    return (
-                        <div>
-                            {discipline.takesPart ? <CheckOutlined /> : <CloseOutlined />}
-                        </div>)
-                },
-            } as any
-        })
+        {
+          title:'3-bój',
+          dataIndex:'D3-5',
+          align:'center',
+          render: (_:any,value:any) => {
+            return (
+                <div>
+                    {checkIfTakesPart(value,[2,5]) ? <CheckOutlined style={{color:'green'}}/> : <CloseOutlined style={{color:'red'}}/>}
+                </div>)
+          },
+        },
+        {
+          title:'5-bój',
+          dataIndex:'D1-2',
+          align:'center',
+          editable:true,
+          render: (_:any,value:any) => {
+            return (
+                <div>
+                    {checkIfTakesPart(value,[0,2]) ? <CheckOutlined style={{color:'green'}}/> : <CloseOutlined style={{color:'red'}}/>}
+                </div>)
+          },
+        },
+        {
+          title:'2-bój odległościowy',
+          dataIndex:'D6-7',
+          align:'center',
+          editable:true,
+          render: (_:any,value:any) => {
+            return (
+                <div>
+                    {checkIfTakesPart(value,getDisciplineRangeForResults(12)) ? <CheckOutlined style={{color:'green'}}/> : <CloseOutlined style={{color:'red'}}/>}
+                </div>)
+          },
+        },
+        {
+          title:'2-bój multi',
+          dataIndex:'D8-9',
+          align:'center',
+          editable:true,
+          render: (_:any,value:any) => {
+            return (
+                <div>
+                    {checkIfTakesPart(value,getDisciplineRangeForResults(13)) ? <CheckOutlined style={{color:'green'}}/> : <CloseOutlined style={{color:'red'}}/>}
+                </div>)
+          },
+        }
+        // ...Array.from({length:9}, (_:any, i: number) => {
+        //     return {
+        //         title:`D${i + 1}`,
+        //         dataIndex:`D${i + 1}`,
+        //         editable:true,
+        //         align:'center',
+        //         render: (_:any, value:any) => {
+        //             let discipline = value.disciplines[i]
+        //             return (
+        //                 <div>
+        //                     {discipline.takesPart ? <CheckOutlined style={{color:'green'}}/> : <CloseOutlined style={{color:'red'}}/>}
+        //                 </div>)
+        //         },
+        //     } as any
+        // })
         ], rules:[]
       },
       D1:{

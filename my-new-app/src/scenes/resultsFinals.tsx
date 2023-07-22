@@ -1,8 +1,10 @@
+import moment from "moment";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import IResultFinals from "../interfaces/IResultFinals";
 import { checkIfTakesPart, getDisciplineRangeForResults, getTotalScore } from "../utils";
 const { ipcRenderer } = window.require("electron");
+import 'moment/locale/pl'
 
 let disciplines = [
     "3-bój",
@@ -137,6 +139,9 @@ const ResultsFinals = (props:IProps) => {
                 <span style={{fontSize:'14px'}}>
                     Sędzia główny<br/><br/>
                     {state.info.mainJudge}
+                </span>
+                <span style={{fontSize:'14px'}}>
+                    {moment().format('Do MMMM YYYY, hh:mm')}
                 </span>
                 <span style={{fontSize:'14px'}}>
                     Sędzia sekretarz<br/><br/>

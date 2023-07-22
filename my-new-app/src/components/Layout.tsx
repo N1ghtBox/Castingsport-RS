@@ -176,11 +176,11 @@ const Layout = () => {
             row.disciplines = Object.values(row.disciplines).map((discipline: any, i:number)=>{
               if(row.category === Categories.Kadet) return {
                 ...discipline,
-                takesPart: i >= 2 && i < 5 ? true : false
+                takesPart: i >= 2 && i < 5 ? true : discipline.takesPart
               }
               return {
                 ...discipline,
-                takesPart: i < set ? true : false
+                takesPart: i < set ? true : discipline.takesPart
               }
             })
         }

@@ -73,8 +73,11 @@ const EditableCell: React.FC<EditableCellProps> = ({
       }
 
       if(dataIndex.startsWith("D")){
-        let index = Object.values(values.disciplines).findIndex((DataType:any) => DataType.number === parseInt(dataIndex[1]))
-        values.disciplines[index].takesPart = !values.disciplines[index].takesPart
+        let range = dataIndex.slice(1).split('-')
+        let index = Object.values(values.disciplines).slice(parseInt(range[0])-1, parseInt(range[1]))
+        index.forEach( (value:any) => {
+          value.takesPart = !value.takesPart
+        })
       }
 
       toggleEdit();

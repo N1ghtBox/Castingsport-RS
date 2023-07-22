@@ -41,6 +41,7 @@ const UploadPicture = (props:IProps) => {
             className="avatar-uploader"
             showUploadList={false}
             action=""
+            accept=".jpg, .jpeg, .png"
             customRequest={() => {}}
             beforeUpload={beforeUpload}
             onChange={handleChange}
