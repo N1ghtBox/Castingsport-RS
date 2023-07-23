@@ -1,4 +1,4 @@
-import { EditOutlined, FilePdfOutlined, HomeOutlined, PrinterOutlined, SaveOutlined, SettingOutlined } from "@ant-design/icons";
+import { EditOutlined, ExportOutlined, FilePdfOutlined, HomeOutlined, ImportOutlined, PrinterOutlined, SaveOutlined, SettingOutlined } from "@ant-design/icons";
 import { Breadcrumb, ConfigProvider, FloatButton, message, notification, Tabs, TabsProps, Tooltip } from "antd";
 import { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
@@ -380,7 +380,7 @@ const Layout = () => {
                   <FloatButton icon={<FilePdfOutlined disabled/>} /> 
                 </Tooltip>
                : 
-               <Tooltip title="Wyeksportuj do PDF">
+               <Tooltip title="Eksportuj do PDF">
                 <FloatButton icon={<FilePdfOutlined />} onClick={() => printResults('exportToPdf')}/> 
                 </Tooltip>
               : null}
@@ -404,10 +404,10 @@ const Layout = () => {
                 isList ? 
                 <>
                   <Tooltip title="Importuj listę">
-                    <FloatButton icon={<SaveOutlined />} onClick={async () => await ImportFile()}/>
+                    <FloatButton icon={<ImportOutlined />} onClick={async () => await ImportFile()}/>
                   </Tooltip>
-                  <Tooltip title="Wyeksportuj listę">
-                    <FloatButton icon={<SaveOutlined />} onClick={async () => await ipcRenderer.invoke('exportList', JSON.stringify(dataSource))}/>
+                  <Tooltip title="Eksportuj listę">
+                    <FloatButton icon={<ExportOutlined />} onClick={async () => await ipcRenderer.invoke('exportList', JSON.stringify(dataSource))}/>
                   </Tooltip>
                 </>
                 :null
@@ -446,7 +446,14 @@ const Layout = () => {
             {isList ? <EditableTable 
               selectedCategory={selectedCategory}
               handleCategoryChange={handleCategoryChange}
-              columns={[...currentColumns, editColumn]}
+              columns={[...currentColumns.map((column:any) => {
+                if(column.dataIndex !== 'club') return column
+                let clubs = [...new Set(dataSource.map(x => x.club))] 
+                return {
+                  ...column,
+                  filters:[...clubs.map(x => {return {text:x, value:x}})]
+                }
+              }), editColumn]}
               handleSave={handleSave}
               dataSource={dataSource.filter(categoryFilter)} 
               handleAdd={handleAdd}/>

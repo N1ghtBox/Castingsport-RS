@@ -25,7 +25,7 @@ const checkLicense = async () => {
         <Route path="/" element={<Start/>}/>
         <Route path="/scores" element={<Layout/>} loader={async ()=> {return await checkLicense()}}/>
         <Route path="/results" element={<Results/>} loader={async ()=> {return await checkLicense()}}/>
-      <Route path="/resultsFinals" element={<ResultsFinals/>} loader={async ()=> {return await checkLicense()}}/>
+        <Route path="/resultsFinals" element={<ResultsFinals/>} loader={async ()=> {return await checkLicense()}}/>
         <Route path="/resultsFinalsTeam" element={<ResultsFinalsTeam/>} loader={async ()=> {return await checkLicense()}}/>
       </>
     )
