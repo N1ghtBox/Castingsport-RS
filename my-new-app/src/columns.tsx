@@ -44,9 +44,10 @@ let scoreWithTime = [
     title:'Wynik',
     dataIndex:'score',
     editable:true,
+    sortDirections:['ascend'],
     sorter:{
       multiple:2,
-      compare:(a:any,b:any) => a.score - b.score
+      compare:(a:any,b:any) => b.score - a.score
     },
     align:'center',
     width:'20%',
@@ -59,12 +60,13 @@ let scoreWithTime = [
     dataIndex:'time',
     editable:true,
     align:'center',
+    sortDirections:['ascend'],
     sorter:
     {
       multiple:1,
       compare: (a:any,b:any) => {
-        let time = moment(b.time, 'm.ss.SS')
-	let difference = moment(a.time, 'm.ss.SS').diff(time)
+        let time = moment(a.time, 'm.ss.SS')
+	let difference = moment(b.time, 'm.ss.SS').diff(time)
         return difference
       }
     },
@@ -81,7 +83,8 @@ let scoreDistanceHighest = [
     editable:true,
     align:'center',
     width:'20%',
-    sorter: (a:any,b:any) => a.score - b.score,
+    sortDirections:['ascend'],
+    sorter: (a:any,b:any) => b.score - a.score,
     render(_:any,record:any){
       return !record.disqualified ? parseFloat(record.score).toFixed(2) : 'DNS'
     }
@@ -104,10 +107,7 @@ let scoreDistanceFly = [
     editable:true,
     align:'center',
     width:'20%',
-    sorter:{
-      multiple:2,
-      compare:(a:any,b:any) => a.score - b.score
-    },
+  
     render(_:any,record:any){
       return !record.disqualified ? parseFloat(record.score).toFixed(2) : 'DNS'
     }
@@ -118,12 +118,18 @@ let scoreDistanceFly = [
     editable:true,
     align:'center',
     width:'20%',
-    sorter:{
-      multiple:1,
-      compare:(a:any,b:any) => a.score - b.score
-    },
     render(_:any,record:any){
       return !record.disqualified ? parseFloat(record.score2).toFixed(2) : 'DNS'
+    }
+  },
+  {
+    title:'Wynik',
+    align:'center',
+    width:'10%',
+    sortDirections:['ascend'],
+    sorter:(a:any,b:any) => (parseFloat(b.score) + parseFloat(b.score2)) - (parseFloat(a.score) + parseFloat(a.score2)),
+    render(_:any,record:any){
+      return !record.disqualified ? (parseFloat(record.score2) + parseFloat(record.score)).toFixed(2) : 'DNS'
     }
   },
 ]

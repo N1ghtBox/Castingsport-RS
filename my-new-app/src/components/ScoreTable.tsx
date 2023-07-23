@@ -153,7 +153,7 @@ const ScoreTable = (props: IProps) => {
     }
 
     return (
-        <div>
+        <div style={{minHeight:'fit-content'}}>
             <div style={{display:"flex", height:"5vh", alignItems:'center', gap:'30px'}}>
                 <Select
                     style={{ width: 120, marginLeft: 16 }}
@@ -174,7 +174,6 @@ const ScoreTable = (props: IProps) => {
                 bordered
                 showSorterTooltip={false}
                 pagination={{ pageSize: 16 }}
-                style={{ maxHeight: "95vh", height: "calc(95vh - 22px)" }}
                 dataSource={props.dataSource}
                 columns={columns as ColumnTypes}
             />

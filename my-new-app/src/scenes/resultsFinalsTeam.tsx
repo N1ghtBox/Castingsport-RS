@@ -36,7 +36,6 @@ const ResultsFinals = (props:IProps) => {
 
     useEffect(()=>{
         let localResults:any[] = []
-        console.log(state.results)
         state.results.forEach((result: any) => mapToTeams(result,localResults, getTotalScore(state.info.dNumber),state.info.type))
         localResults.sort((a:IResultFinalsTeam, b:IResultFinalsTeam) => b.total - a.total)
         setResults(localResults)

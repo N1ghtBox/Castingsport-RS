@@ -210,16 +210,16 @@ const Layout = () => {
       };
 
 
-      const handleAdd = () => {
+      const handleAdd = (imported?:DataType) => {
         const newData: DataType = {
-          key: `${dataSource.length + 1}`,
+          key: `${imported?.key || dataSource.length + 1}`,
           startingNumber:'',
-          girl:false,
+          girl:imported?.girl !== undefined ? imported.girl : false,
           disqualified:false,
-          name: ``,
-          club: '',
-          team:Teams.Indywidualnie,
-          category:Categories.Kadet,
+          name: imported?.name ? imported.name : '',
+          club: imported?.club ? imported.club : '',
+          team:imported?.team ? imported.team : Teams.Indywidualnie,
+          category:imported?.category ? imported.category : Categories.Kadet,
           disciplines:{
             ...Array.from({length:9}, (_:any, i:number) => {
               return {
@@ -232,7 +232,7 @@ const Layout = () => {
             })
           }
         };
-        setDataSource([...dataSource, newData]);
+        setDataSource(prev => [...prev, newData]);
       };
 
       const handleCategoryChange = (category:string) => {
@@ -243,6 +243,16 @@ const Layout = () => {
         else setCategoryFilter(() => (value:any) => {return value.category === category})
       }
       
+      const ImportFile = async () => {
+        let data = await ipcRenderer.invoke('importList')
+
+        let json = JSON.parse(data)
+        console.log(json)
+        json.forEach((element:any) => {
+          console.log(element)
+          handleAdd(element)
+        });
+      }
 
       const editColumn = {
         title:'Akcje',
@@ -390,6 +400,18 @@ const Layout = () => {
                 <FloatButton icon={<PrinterOutlined />} onClick={() => printResults('printResults')}/> 
                </Tooltip>
               : null}
+              {
+                isList ? 
+                <>
+                  <Tooltip title="Importuj listę">
+                    <FloatButton icon={<SaveOutlined />} onClick={async () => await ImportFile()}/>
+                  </Tooltip>
+                  <Tooltip title="Wyeksportuj listę">
+                    <FloatButton icon={<SaveOutlined />} onClick={async () => await ipcRenderer.invoke('exportList', JSON.stringify(dataSource))}/>
+                  </Tooltip>
+                </>
+                :null
+              }
               <Tooltip title="Zapisz">
                 <FloatButton icon={<SaveOutlined />} onClick={() => UpdateComp()}/>
               </Tooltip>

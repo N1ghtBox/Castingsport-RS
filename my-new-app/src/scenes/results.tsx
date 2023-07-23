@@ -55,7 +55,7 @@ const Results = (props:IProps) => {
 
     const sortByTime = (a:IResult, b:IResult) => {
         let time = moment(b.time, 'm.ss.SS')
-	let difference = moment(a.time, 'm.ss.SS').diff(time)
+	    let difference = moment(a.time, 'm.ss.SS').diff(time)
         return difference
          
     }
@@ -134,7 +134,10 @@ const Results = (props:IProps) => {
                 </thead>
                 <tbody style={{textAlign:'center'}}>
                     {
-                        results.sort(sortByTime).sort((a:any,b:any) => b.score - a.score).map((result:IResult, index:number) => renderResultOfDiscipline(result,index))
+                        results.sort(sortByTime).sort((a:any,b:any) => {
+                            if(!a.score2 && !b.score2) return parseFloat(b.score) - parseFloat(a.score)
+                            return (parseFloat(b.score) + parseFloat(b.score2)) - (parseFloat(a.score) + parseFloat(a.score2))
+                        }).map((result:IResult, index:number) => renderResultOfDiscipline(result,index))
                     }
                 </tbody>
             </table>

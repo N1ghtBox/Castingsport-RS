@@ -7,6 +7,16 @@ import AES from 'crypto-js/aes'
 // whether you're running in development or production).
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
+  
+const decipher = (salt:string) => {
+  const textToChars = (text: string) => text.split('').map((c: string) => c.charCodeAt(0));
+  const applySaltToChar = (code: any) => textToChars(salt).reduce((a: number,b: number) => a ^ b, code);
+  return (encoded:string) => encoded.match(/.{1,2}/g)
+    .map((hex:string) => parseInt(hex, 16))
+    .map(applySaltToChar)
+    .map(charCode => String.fromCharCode(charCode))
+    .join('');
+}
 
 
 // Handle creating/removing shortcuts on Windows when installing/uninstalling.
@@ -73,7 +83,8 @@ const createWindow = (): void => {
     let json:json = await readFile('./data.json')
     let license = json.license
     if(!license) return {valid:false, errorMessage:'Nie znaleziono prawidlowej licencji'}
-    let decodedLicense = AES.decrypt(license,'Yjxs8W91HjG!NbJ&yhtN').toString()
+    let myDipher = decipher('Yjxs8W91HjG!NbJ&yhtN')
+    let decodedLicense = myDipher(license)
     let splitLicense = decodedLicense.split(':')
     if(splitLicense[0] !== 'Castingsport-RS') return {valid:false, errorMessage:'Nie znaleziono prawidlowej licencji'} 
     let date = new Date(splitLicense[1])
@@ -81,11 +92,44 @@ const createWindow = (): void => {
     return {valid:true, errorMessage:''}
   })
 
+  ipcMain.handle('exportList',async (_:any,...args:any[])=>{
+    let competetors = JSON.parse(args[0])
+    let data = competetors.map((comp:any) =>{
+      return{
+        key:comp.key,
+        girl:comp.girl,
+        name:comp.name,
+        team:comp.team,
+        category:comp.category,
+        club:comp.club,
+      }
+    })
+    let path = dialog.showSaveDialogSync({
+      filters:[
+        {name:"Plik JSON", extensions:['json']}
+      ]
+    })
+    await writeFile(`${path}`,{data})
+    return true
+  })
+
+  ipcMain.handle('importList',async (_:any,...args:any[])=>{
+    let path = dialog.showOpenDialogSync({
+      filters:[
+        {name:"Plik JSON", extensions:['json']}
+      ],
+      properties:['openFile']
+    })
+    let data = await readFile(path[0])
+    return JSON.stringify(data.data)
+  })
+
   ipcMain.handle('saveLicense',async (_:any, ...args:any[]):Promise<{ valid: boolean; errorMessage:string}> => {
     let json:json = await readFile('./data.json')
     let license = args[0]
     if(!license) return {valid:false, errorMessage:'Nie znaleziono prawidlowej licencji'}
-    let decodedLicense = AES.decrypt(license,'Yjxs8W91HjG!NbJ&yhtN').toString()
+    let myDipher = decipher('Yjxs8W91HjG!NbJ&yhtN')
+    let decodedLicense = myDipher(license)
     let splitLicense = decodedLicense.split(':')
     if(splitLicense[0] !== 'Castingsport-RS') return {valid:false, errorMessage:'Nie znaleziono prawidlowej licencji'} 
     let date = new Date(splitLicense[1])
