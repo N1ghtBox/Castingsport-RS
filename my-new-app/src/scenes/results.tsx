@@ -4,7 +4,6 @@ import "moment/locale/pl";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import IResult from "../interfaces/IResult";
-import { MaskedInput } from "antd-mask-input";
 const { ipcRenderer } = window.require("electron");
 
 let disciplines = [
@@ -29,6 +28,7 @@ const Results = (props: IProps) => {
   const [columns, setColumns] = useState([]);
   const [peopleInFinals, setFinals] = useState(0);
   const [open, setOpen] = useState(true);
+  const [print, setStartPrint] = useState(false);
   const [results, setResults] = useState<IResult[]>([]);
   const [showFinals, setShowFinals] = useState(false);
   const [showFinalsModal, setShowFinalsModal] = useState(false);
@@ -39,6 +39,8 @@ const Results = (props: IProps) => {
       name: string;
       startingNumber: string;
       club: string;
+      score: number;
+      time?: string;
       scoreFinal?: number;
       timeFinal?: string;
     }[]
@@ -61,42 +63,20 @@ const Results = (props: IProps) => {
     setInfo(state.info);
   }, [state]);
 
-  //   useEffect(() => {
-  //     if (!open)
-  //       (async () => {
-  //         await ipcRenderer.invoke(
-  //           state.action,
-  //           `Konkurencja-${state.info.dNumber}_${state.info.category}.pdf`
-  //         );
-  //       })();
-  //   }, [open]);
   useEffect(() => {
-    console.log(finalsResults);
-  }, []);
+    if (printWithFinals || print)
+      (async () => {
+        await ipcRenderer.invoke(
+          state.action,
+          `Konkurencja-${state.info.dNumber}_${state.info.category}.pdf`
+        );
+      })();
+  }, [print, printWithFinals]);
 
   const GenerateFinalInputRow = (comp: IResult) => {
-    let index = finalsResults.findIndex(x=>x.key == comp.key)
-    const addValue = (
-      comp: IResult,
-      value: any,
-      key: "scoreFinal" | "timeFinal"
-    ) => {
-      let index = finalsResults.findIndex((x) => x.key == comp.key);
-      let localfinals = [...finalsResults];
-      if (index >= 0) {
-        (localfinals[index][key] as any) = value;
-        setFinalsResults(localfinals);
-      } else {
-        localfinals.push({
-          key: comp.key,
-          name: comp.name,
-          startingNumber: comp.startingNumber,
-          club: comp.club,
-          [key]: value,
-        });
-        setFinalsResults(localfinals);
-      }
-    };
+    let index = finalsResults.findIndex((x) => x.key == comp.key);
+    if (index < 0) return <span key={comp.key}></span>;
+    let element = finalsResults[index];
 
     return (
       <div
@@ -110,18 +90,29 @@ const Results = (props: IProps) => {
       >
         <h3 style={{ width: "30%" }}>{comp.name}</h3>
         <InputNumber
+          max={100}
           placeholder="Wynik"
-          value={index >= 0 ? finalsResults[index].scoreFinal : 0}
-          onChange={(val) => addValue(comp, val, "scoreFinal")}
+          value={element.scoreFinal}
+          onChange={(val) => {
+            let localFinals = [...finalsResults];
+            localFinals.splice(index, 1, { ...element, scoreFinal: val });
+            setFinalsResults([...localFinals]);
+          }}
           style={{ height: "40px" }}
         />
         {[1, 3, 4, 8].includes(state.info.dNumber) ? (
-          <MaskedInput
-            placeholder="Czas"
-            value={index >= 0 ? finalsResults[index].timeFinal : ''}
-            onChange={(val) => addValue(comp, val, "timeFinal")}
+          <Input
+            placeholder="_.__.__"
+            value={element.timeFinal}
+            onChange={(val) => {
+              let localFinals = [...finalsResults];
+              localFinals.splice(index, 1, {
+                ...element,
+                timeFinal: val.target.value,
+              });
+              setFinalsResults([...localFinals]);
+            }}
             style={{ height: "40px", maxWidth: "100px" }}
-            mask={"0.00.00"}
           />
         ) : null}
       </div>
@@ -153,6 +144,7 @@ const Results = (props: IProps) => {
   };
 
   const sortByTimeFinal = (a: any, b: any) => {
+    if (!a.timeFinal) return 0;
     let time = moment(b.timeFinal, "m.ss.SS");
     let difference = moment(a.timeFinal, "m.ss.SS").diff(time);
     return difference;
@@ -170,16 +162,16 @@ const Results = (props: IProps) => {
         }}
       >
         <td style={{ fontWeight: "900", paddingBlock: "10px" }}>
-          {results.findIndex((x) => x.key == result.key) + 1}
+          {index + 1}
         </td>
         <td>{result.startingNumber}</td>
         <td>{result.name}</td>
         <td>{result.club}</td>
         <td>{result.score}</td>
         <td>{result.time ? result.time : result.score2}</td>
-        {printWithFinals ? <td>{(result as any).scoreFinal}</td> : null}
+        {printWithFinals ? <td style={{fontWeight:700}}>{(result as any).scoreFinal}</td> : null}
         {printWithFinals && [1, 3, 4, 8].includes(state.info.dNumber) ? (
-          <td>{(result as any).timeFinal}</td>
+          <td style={{fontWeight:700}}>{(result as any).timeFinal}</td>
         ) : null}
       </tr>
     );
@@ -208,6 +200,7 @@ const Results = (props: IProps) => {
             onClick={() => {
               setFinals(0);
               setOpen(false);
+              setStartPrint(true);
             }}
           >
             Brak
@@ -218,7 +211,26 @@ const Results = (props: IProps) => {
             danger
             onClick={() => {
               setOpen(false);
-              setShowFinalsModal(showFinals);
+              if(showFinals){
+                setShowFinalsModal(showFinals);
+                setFinalsResults(
+                  results.slice(0, peopleInFinals).map((comp) => {
+                    return {
+                      key: comp.key,
+                      name: comp.name,
+                      startingNumber: comp.startingNumber,
+                      club: comp.club,
+                      score: comp.score,
+                      time: comp.time,
+                      timeFinal: "",
+                      scoreFinal: undefined,
+                    };
+                  })
+                );
+
+              }else{
+                setStartPrint(true)
+              }
             }}
           >
             Ok
@@ -264,7 +276,6 @@ const Results = (props: IProps) => {
             Cofnij
           </Button>,
           <Button
-            disabled={peopleInFinals !== finalsResults.length}
             key="okButton"
             type="primary"
             danger
@@ -289,9 +300,7 @@ const Results = (props: IProps) => {
             flexDirection: "column",
           }}
         >
-          {results
-            .slice(0, peopleInFinals)
-            .map((x) => GenerateFinalInputRow(x))}
+          {finalsResults.map((x: any) => GenerateFinalInputRow(x))}
         </div>
       </Modal>
       <div
@@ -352,7 +361,7 @@ const Results = (props: IProps) => {
               marginBottom: "5px",
             }}
           >
-            {`Konkurencja ${state.info.dNumber}`}
+            {`Konkurencja ${state.info.dNumber}${printWithFinals ? ` - Finał` : ''}`}
           </h3>
           <h6 style={{ marginTop: 0, textAlign: "center" }}>
             {info ? disciplines[info.dNumber - 1] : ""}
@@ -374,11 +383,22 @@ const Results = (props: IProps) => {
               {columns.map((name) => (
                 <th key={name}>{name}</th>
               ))}
+              {printWithFinals ? (
+                <th style={{ fontWeight: 900 }}>Wynik</th>
+              ) : null}
+              {printWithFinals && [1, 3, 4, 8].includes(state.info.dNumber) ? (
+                <th style={{ fontWeight: 900 }}>Czas</th>
+              ) : null}
             </tr>
           </thead>
           <tbody style={{ textAlign: "center" }}>
             {printWithFinals
-              ? [...results.slice(peopleInFinals),...finalsResults].map((result: any, index: number) =>
+              ? [
+                  ...finalsResults
+                    .sort(sortByTimeFinal)
+                    .sort((a, b) => b.scoreFinal - a.scoreFinal),
+                  ...results.slice(peopleInFinals),
+                ].map((result: any, index: number) =>
                   renderResultOfDiscipline(result, index)
                 )
               : results.map((result: IResult, index: number) =>
