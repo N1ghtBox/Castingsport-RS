@@ -3,6 +3,7 @@ import moment from "moment";
 import { Teams } from "./enums";
 import IColumns from "./interfaces/columns";
 import Competetors from "./interfaces/competetor";
+import DataType from "./interfaces/dataType";
 import { checkIfTakesPart, getDisciplineRangeForResults, getTotalScoreT12, getTotalScoreT13, getTotalScoreT3, getTotalScoreT5 } from "./utils";
 
 const renderEmpty = (nameOfDataIndex:string) => {
@@ -34,6 +35,7 @@ let info = [
     title: 'Okręg',
     dataIndex: 'club',
     width: '15%',
+    onFilter: (value: string, record:DataType) => record.club.indexOf(value) === 0,
     align:'center',
     render: renderEmpty('club')
   },

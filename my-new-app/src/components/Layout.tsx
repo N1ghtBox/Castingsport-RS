@@ -1,21 +1,5 @@
-import {
-  EditOutlined,
-  FilePdfOutlined,
-  HomeOutlined,
-  PrinterOutlined,
-  SaveOutlined,
-  SettingOutlined,
-} from "@ant-design/icons";
-import {
-  Breadcrumb,
-  ConfigProvider,
-  FloatButton,
-  message,
-  notification,
-  Tabs,
-  TabsProps,
-  Tooltip,
-} from "antd";
+import { EditOutlined, FilePdfOutlined, HomeOutlined, PrinterOutlined, SaveOutlined, SettingOutlined } from "@ant-design/icons";
+import { Breadcrumb, ConfigProvider, FloatButton, message, notification, Tabs, TabsProps, Tooltip } from "antd";
 import { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
@@ -465,195 +449,159 @@ const Layout = () => {
       });
   };
 
-  return (
-    <div className={"mainContainer"}>
-      <ConfigProvider
-        theme={{
-          token: {
-            colorPrimary: "#d9363e",
-          },
-        }}
-      >
-        <FloatButton.Group
-          trigger="click"
-          type="primary"
-          style={{ right: 24 }}
-          className={"changeBg"}
-          icon={<SettingOutlined />}
-        >
-          {!isList ? (
-            selectedCategory === "Wszyscy" ? (
-              <Tooltip title="Należy wybrać kategorie">
-                <FloatButton icon={<FilePdfOutlined disabled />} />
-              </Tooltip>
-            ) : dataSource.filter(categoryFilter).length <= 0 ? (
-              <Tooltip title="Brak zawodników">
-                <FloatButton icon={<FilePdfOutlined disabled />} />
-              </Tooltip>
-            ) : (
-              <Tooltip title="Wyeksportuj do PDF">
-                <FloatButton
-                  icon={<FilePdfOutlined />}
-                  onClick={() => printResults("exportToPdf")}
-                />
-              </Tooltip>
-            )
-          ) : null}
+    return (
+        <div className={'mainContainer'}>
+          <ConfigProvider
+            theme={{
+              
+              token: {
+                
+                colorPrimary: '#d9363e',
+              },
+            }}
+          >
+            <FloatButton.Group
+              trigger="click"
+              type="primary"
+              style={{ right: 24 }}
+              className={'changeBg'}
+              icon={<SettingOutlined />}
+              >
 
-          {!isList ? (
-            selectedCategory === "Wszyscy" ? (
-              <Tooltip title="Należy wybrać kategorie">
-                <FloatButton icon={<PrinterOutlined disabled />} />
+              {!isList ? 
+               selectedCategory === "Wszyscy" ? 
+                <Tooltip title="Należy wybrać kategorie">
+                  <FloatButton icon={<FilePdfOutlined disabled/>} /> 
+                </Tooltip>
+               :
+               dataSource.filter(categoryFilter).length <= 0 ?
+                <Tooltip title="Brak zawodników">
+                  <FloatButton icon={<FilePdfOutlined disabled/>} /> 
+                </Tooltip>
+               : 
+               <Tooltip title="Wyeksportuj do PDF">
+                <FloatButton icon={<FilePdfOutlined />} onClick={() => printResults('exportToPdf')}/> 
+                </Tooltip>
+              : null}
+
+              {!isList ? 
+               selectedCategory === "Wszyscy" ? 
+                <Tooltip title="Należy wybrać kategorie">
+                  <FloatButton icon={<PrinterOutlined disabled/>} /> 
+                </Tooltip>
+               :
+               dataSource.filter(categoryFilter).length <= 0 ?
+                <Tooltip title="Brak zawodników">
+                  <FloatButton icon={<PrinterOutlined disabled/>} /> 
+                </Tooltip>
+               : 
+               <Tooltip title="Wydrukuj">
+                <FloatButton icon={<PrinterOutlined />} onClick={() => printResults('printResults')}/> 
+               </Tooltip>
+              : null}
+              {
+                isList ? 
+                <>
+                  <Tooltip title="Importuj listę">
+                    <FloatButton icon={<SaveOutlined />} onClick={async () => await ImportFile()}/>
+                  </Tooltip>
+                  <Tooltip title="Wyeksportuj listę">
+                    <FloatButton icon={<SaveOutlined />} onClick={async () => await ipcRenderer.invoke('exportList', JSON.stringify(dataSource))}/>
+                  </Tooltip>
+                </>
+                :null
+              }
+              <Tooltip title="Zapisz">
+                <FloatButton icon={<SaveOutlined />} onClick={() => UpdateComp()}/>
               </Tooltip>
-            ) : dataSource.filter(categoryFilter).length <= 0 ? (
-              <Tooltip title="Brak zawodników">
-                <FloatButton icon={<PrinterOutlined disabled />} />
-              </Tooltip>
-            ) : (
-              <Tooltip title="Wydrukuj">
-                <FloatButton
-                  icon={<PrinterOutlined />}
-                  onClick={() => printResults("printResults")}
+            </FloatButton.Group>
+          </ConfigProvider>
+          <Breadcrumb
+            style={{marginLeft:16}}
+            items={[
+              {
+                title: <HomeOutlined />,
+                onClick: async () => {
+                  await UpdateComp()
+                  navigate('/')
+                }
+              },
+              {
+                title: competitionInfo.name,
+              },
+            ]}
+            />
+            <img src={competitionInfo.logo} alt="" style={{position:'absolute', right:16, top:10, height:'5vh'}}/>
+            <EditModal
+              open={modalOpen}
+              editEntity={editEntity}
+              onCancel={onCancel}
+              onDelete={onDelete}
+              onCheck={onCheck}
+              onDisqualify={onDisqualify}
+            />
+            {contextHolderMessages}
+            {contextHolderNotifications}
+            {isList ? <EditableTable 
+              selectedCategory={selectedCategory}
+              handleCategoryChange={handleCategoryChange}
+              columns={[...currentColumns, editColumn]}
+              handleSave={handleSave}
+              dataSource={dataSource.filter(categoryFilter)} 
+              handleAdd={handleAdd}/>
+            :
+            !showResults ? 
+              <ScoreTable 
+                selectedCategory={selectedCategory}
+                handleCategoryChange={handleCategoryChange}
+                columns={currentColumns}
+                handleSave={handleSaveScore}
+                rules={rules}
+                finalKey={key}
+                dataSource={[6,7,8,9].includes(key) ? 
+                  dataSource.filter(x => filterByGender(x, selectedCategory) && x.disciplines[key - 1].takesPart).map(value => {return {
+                    ...value,
+                    score:value.disciplines[key - 1].score,
+                    score2:value.disciplines[key - 1].score2,
+                    time:value.disciplines[key - 1].time,
+                  }})
+                  : getFilteredCompetetors() as any} 
                 />
-              </Tooltip>
-            )
-          ) : null}
-          {isList ? (
-            <>
-              <Tooltip title="Importuj listę">
-                <FloatButton
-                  icon={<SaveOutlined />}
-                  onClick={async () => await ImportFile()}
-                />
-              </Tooltip>
-              <Tooltip title="Wyeksportuj listę">
-                <FloatButton
-                  icon={<SaveOutlined />}
-                  onClick={async () =>
-                    await ipcRenderer.invoke(
-                      "exportList",
-                      JSON.stringify(dataSource)
-                    )
-                  }
-                />
-              </Tooltip>
-            </>
-          ) : null}
-          <Tooltip title="Zapisz">
-            <FloatButton icon={<SaveOutlined />} onClick={() => UpdateComp()} />
-          </Tooltip>
-        </FloatButton.Group>
-      </ConfigProvider>
-      <Breadcrumb
-        style={{ marginLeft: 16 }}
-        items={[
-          {
-            title: <HomeOutlined />,
-            onClick: async () => {
-              await UpdateComp();
-              navigate("/");
-            },
-          },
-          {
-            title: competitionInfo.name,
-          },
-        ]}
-      />
-      <img
-        src={competitionInfo.logo}
-        alt=""
-        style={{ position: "absolute", right: 16, top: 10, height: "5vh" }}
-      />
-      <EditModal
-        open={modalOpen}
-        editEntity={editEntity}
-        onCancel={onCancel}
-        onDelete={onDelete}
-        onCheck={onCheck}
-        onDisqualify={onDisqualify}
-      />
-      {contextHolderMessages}
-      {contextHolderNotifications}
-      {isList ? (
-        <EditableTable
-          selectedCategory={selectedCategory}
-          handleCategoryChange={handleCategoryChange}
-          columns={[...currentColumns, editColumn]}
-          handleSave={handleSave}
-          dataSource={dataSource.filter(categoryFilter)}
-          handleAdd={handleAdd}
-        />
-      ) : !showResults ? (
-        <ScoreTable
-          selectedCategory={selectedCategory}
-          handleCategoryChange={handleCategoryChange}
-          columns={currentColumns}
-          handleSave={handleSaveScore}
-          rules={rules}
-          finalKey={key}
-          dataSource={
-            [6, 7, 8, 9].includes(key)
-              ? dataSource
-                  .filter(
-                    (x) =>
-                      filterByGender(x, selectedCategory) &&
-                      x.disciplines[key - 1].takesPart
-                  )
-                  .map((value) => {
-                    return {
-                      ...value,
-                      score: value.disciplines[key - 1].score,
-                      score2: value.disciplines[key - 1].score2,
-                      time: value.disciplines[key - 1].time,
-                    };
-                  })
-              : (getFilteredCompetetors() as any)
-          }
-        />
-      ) : (
-        <ResultsTable
-          finalKey={key}
-          type={type}
-          setType={setType}
-          disciplineRange={getDisciplineRangeForResults(key)}
-          getScores={getTotalScore(key)}
-          selectedCategory={selectedCategory}
-          selectedTeamType={typeOfTeams}
-          handleCategoryChange={handleCategoryChange}
-          handleTeamTypeChange={(key: string) => setTypeOfTeams(key)}
-          columns={currentColumns}
-          dataSource={dataSource.filter(
-            key === 12 || key === 13
-              ? (value) => filterByGender(value, selectedCategory)
-              : type === "Drużyny"
-              ? () => true
-              : categoryFilter
-          )}
-        />
-      )}
-      <div
-        style={{
-          display: "flex",
-          position: "absolute",
-          width: "50%",
-          left: 0,
-          bottom: 0,
-        }}
-      >
-        <Tabs
-          className={"tabs"}
-          tabBarStyle={{ margin: 0 }}
-          type="card"
-          onChange={onChange}
-          activeKey={tabKey}
-          items={tabs}
-        />
-      </div>
-    </div>
-  );
-};
-interface IProps {
-  children: any;
+            :
+                <ResultsTable
+                  finalKey={key}
+                  type={type}
+                  setType={setType}
+                  disciplineRange={getDisciplineRangeForResults(key)}
+                  getScores={getTotalScore(key)}
+                  selectedCategory={selectedCategory}
+                  selectedTeamType={typeOfTeams}
+                  handleCategoryChange={handleCategoryChange}
+                  handleTeamTypeChange={(key:string) => setTypeOfTeams(key)}
+                  columns={currentColumns}
+                  dataSource={dataSource.filter(
+                    key === 12 || key === 13 ? 
+                    value => filterByGender(value, selectedCategory) 
+                    : 
+                    type === 'Drużyny' ? 
+                    () => true
+                    :
+                    categoryFilter)} />
+            }
+            <div style={{display:'flex', position:'absolute', width:'50%', left:0, bottom:0}}>
+              <Tabs 
+                className={'tabs'}
+                tabBarStyle={{margin:0}}
+                type="card"
+                onChange={onChange}
+                activeKey={tabKey} 
+                items={tabs}/>
+            </div>
+        </div>
+    )
+}
+interface IProps{
+    children: any
 }
 
 export default Layout;
