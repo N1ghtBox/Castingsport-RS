@@ -31,10 +31,10 @@ import {
   getMessageProps,
   getTotalScore,
 } from "../utils";
-import EditableTable from "./EditableTable";
-import EditModal from "./EditModal";
-import ResultsTable from "./ResultsTable";
-import ScoreTable from "./ScoreTable";
+import EditableTable from "./Competitions/EditableTable";
+import EditModal from "./Competitions/EditModal";
+import ResultsTable from "./Competitions/ResultsTable";
+import ScoreTable from "./Competitions/ScoreTable";
 
 const { ipcRenderer } = window.require("electron");
 

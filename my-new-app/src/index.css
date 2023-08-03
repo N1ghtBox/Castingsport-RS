@@ -3,6 +3,16 @@ body {
     Arial, sans-serif;
   margin:0;
 }
+
+.linkedIn-link{
+  /* font-weight: bold; */
+  color: blue;
+}
+
+.linkedIn-link:hover{
+  cursor: pointer;
+}
+
 .mainContainer{
   width: 100vw;
   min-height: 100vh;

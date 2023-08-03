@@ -4,9 +4,9 @@ import {
   checkIfTakesPart,
   getCategoriesForDiscipline,
   mapToTeams,
-} from "../utils";
-import { Categories, Teams } from "../enums";
-import DataType from "../interfaces/dataType";
+} from "../../utils";
+import { Categories, Teams } from "../../enums";
+import DataType from "../../interfaces/dataType";
 
 type EditableTableProps = Parameters<typeof Table>[0];
 

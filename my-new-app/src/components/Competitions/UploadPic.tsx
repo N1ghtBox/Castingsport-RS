@@ -49,7 +49,7 @@ const UploadPicture = (props: IProps) => {
       onChange={handleChange}
     >
       {imageUrl ? (
-        <img src={imageUrl} alt="avatar" style={{ width: "100%" }} />
+        <img src={imageUrl || props.image} alt="avatar" style={{ width: "100%" }} />
       ) : (
         uploadButton
       )}
@@ -58,5 +58,6 @@ const UploadPicture = (props: IProps) => {
 };
 interface IProps {
   uploadPicture: (encodedPic: string) => void;
+  image?:string;
 }
 export default UploadPicture;

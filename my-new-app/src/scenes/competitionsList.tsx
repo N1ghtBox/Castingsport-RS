@@ -9,11 +9,12 @@ import {
 } from "antd";
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
-import CompetitionCard from "../components/CompetitionCard";
-import UploadPicture from "../components/UploadPic";
+import CompetitionCard from "../components/Competitions/CompetitionCard";
+import UploadPicture from "../components/Competitions/UploadPic";
 import { getMessageProps } from "../utils";
 import locale from "antd/locale/pl_PL";
-import { Dayjs } from "dayjs";
+import dayjs, { Dayjs } from "dayjs";
+import MenuTop from "../components/MenuTop";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -53,9 +54,11 @@ const Start = (props: IProps) => {
     errorMessage: string;
   }>({ open: false, errorMessage: "" });
   const [newCompName, setNewCompName] = useState("");
+  const [updateMode, setUpdateMode] = useState(false);
   const [license, setLicense] = useState("");
   const [mainJudge, setMainJudge] = useState("");
   const [secretaryJudge, setSecretaryJudge] = useState("");
+  const [editDate, setEditDate] = useState<[Dayjs, Dayjs]>();
   const [logo, setLogo] = useState<string>("");
   const [date, setDate] = useState<string>("");
 
@@ -87,12 +90,42 @@ const Start = (props: IProps) => {
     })();
   }, []);
 
+  const deleteCompetiion = async (id: string) => {
+    let json = await ipcRenderer.invoke("deleteComp", id);
+    setListOfCompetiton(json.competitions);
+  };
+
+  const editComp = async (entity: any) => {
+    setModalOpen(true);
+    setUpdateMode(true);
+    setLogo(entity.logo);
+    setNewCompName(entity.name);
+    setMainJudge(entity.mainJudge);
+    setDate(entity.date);
+    let date = entity.date.split(" ");
+    let range = date[0].split("-");
+    let month = months.findIndex((month) => month === date[1]) + 1;
+
+    setEditDate([dayjs(new Date(`${date[2]}.${month}.${range[0]}`)), dayjs(new Date(`${date[2]}.${month}.${range[1]}`))]);
+
+    setSecretaryJudge(entity.secretaryJudge);
+  };
+
   const openCompetition = (id: string) => {
     navigate("/scores", { state: { id } });
   };
 
+  const generateFinals = async (id:string) => {
+    let generated = await ipcRenderer.invoke('generateFinalResults',id)
+    setListOfCompetiton(generated)
+  }
+
   const onCancel = () => {
     setModalOpen(false);
+    setEditDate(undefined);
+    setLogo("");
+    setMainJudge("");
+    setSecretaryJudge("");
     setNewCompName("");
   };
 
@@ -120,6 +153,24 @@ const Start = (props: IProps) => {
       messageApi.open(
         getMessageProps("error", "Nie podano sędziego sekretarza", 2)
       );
+      return;
+    }
+    if (updateMode) {
+      let comp = await ipcRenderer.invoke("editComp", {
+        logo,
+        name: newCompName,
+        date,
+        mainJudge,
+        secretaryJudge,
+      });
+      setEditDate(undefined);
+      setModalOpen(false);
+      setLogo("");
+      setNewCompName("");
+      setMainJudge("");
+      setSecretaryJudge("");
+      setUpdateMode(false);
+      setListOfCompetiton(comp)
       return;
     }
     try {
@@ -160,12 +211,13 @@ const Start = (props: IProps) => {
         gap: "50px",
       }}
     >
+      <MenuTop activeTab='competitions'/>
       <Modal
         centered
-        title="Utwórz nowe zawody"
+        title={updateMode ? "Edycja zawodów" : "Utwórz nowe zawody"}
         open={isModalOpen}
         onOk={onOk}
-        okText={"Utwórz"}
+        okText={updateMode ? "Edytuj" : "Utwórz" }
         cancelText={"Anuluj"}
         okButtonProps={{ style: { background: "#d9363e" } }}
         onCancel={onCancel}
@@ -188,6 +240,7 @@ const Start = (props: IProps) => {
             />
             <ConfigProvider locale={locale}>
               <RangePicker
+                value={editDate}
                 onChange={(values: [Dayjs, Dayjs]) => {
                   setDate(
                     `${values[0].date()}-${values[1].date()} ${
@@ -212,7 +265,7 @@ const Start = (props: IProps) => {
               />
             </div>
           </div>
-          <UploadPicture uploadPicture={(pic) => setLogo(pic)} />
+          <UploadPicture uploadPicture={(pic) => setLogo(pic)} image={logo}/>
         </div>
       </Modal>
       <Modal
@@ -256,10 +309,17 @@ const Start = (props: IProps) => {
         <CompetitionCard
           key={value.id}
           competition={value}
+          summaryGenerated={value.summaryGenerated}
           onClick={() => openCompetition(value.id)}
+          generateFinalResults={async () => await generateFinals(value.id)}
+          deleteComp={async () => await deleteCompetiion(value.id)}
+          editComp={() => editComp(value)}
         />
       ))}
-      <CompetitionCard addNewCard onClick={() => setModalOpen(true)} />
+      <CompetitionCard key={'addNew'} addNewCard onClick={() => setModalOpen(true)} />
+      <div style={{position:'absolute', bottom:0, width:'100%', textAlign:'center', paddingBlock:'15px'}}>
+        Copyright &copy;	<a className={'linkedIn-link'} onClick={async () => await ipcRenderer.invoke('openLinkedIn')}>Dawid Witczak</a>
+      </div>
     </div>
   );
 };

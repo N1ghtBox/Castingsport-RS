@@ -1,11 +1,9 @@
-import { Form, Input, InputRef, Select, Table } from "antd";
-import type { FormInstance, Rule } from "antd/es/form";
+import { PlusOutlined } from "@ant-design/icons";
+import { Button, Checkbox, Form, Input, InputRef, Select, Table } from "antd";
+import type { FormInstance } from "antd/es/form";
 import React, { useContext, useEffect, useRef, useState } from "react";
-import Competetors from "../interfaces/competetor";
-import DataType from "../interfaces/dataType";
-import { Categories } from "../enums";
-import { MaskedInput } from "antd-mask-input";
-import { getCategoriesForDiscipline } from "../utils";
+import { Categories, Teams } from "../../enums";
+import DataType from "../../interfaces/dataType";
 
 const EditableContext = React.createContext<FormInstance<any> | null>(null);
 
@@ -25,13 +23,13 @@ const EditableRow: React.FC<EditableRowProps> = ({ index, ...props }) => {
 };
 
 interface EditableCellProps {
-  rules: Rule[];
   title: React.ReactNode;
   editable: boolean;
   children: React.ReactNode;
-  dataIndex: keyof Competetors;
-  record: Competetors;
-  handleSave: (record: Competetors) => void;
+  dataIndex: keyof DataType;
+  record: DataType;
+  dataSource: DataType[];
+  handleSave: (record: DataType) => void;
 }
 
 const EditableCell: React.FC<EditableCellProps> = ({
@@ -41,7 +39,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
   dataIndex,
   record,
   handleSave,
-  rules,
+  dataSource,
   ...restProps
 }) => {
   const [editing, setEditing] = useState(false);
@@ -55,19 +53,33 @@ const EditableCell: React.FC<EditableCellProps> = ({
     }
   }, [editing]);
 
-  const toggleEdit = () => {
+  const toggleEdit = async () => {
     setEditing(!editing);
-    form.setFieldsValue({
-      [dataIndex]: record[dataIndex] === 0 ? "" : record[dataIndex],
-    });
+    if (dataIndex.startsWith("D")) {
+      form.setFieldsValue({ disciplines: record.disciplines });
+    } else form.setFieldsValue({ [dataIndex]: record[dataIndex] });
   };
 
-  const save = async () => {
+  const save = async (value?: any) => {
     try {
       const values = await form.validateFields();
+      if (value && dataIndex === "team") {
+        values.team = value;
+      }
+
+      if (dataIndex.startsWith("D")) {
+        let range = dataIndex.slice(1).split("-");
+        let index = Object.values(values.disciplines).slice(
+          parseInt(range[0]) - 1,
+          parseInt(range[1])
+        );
+        index.forEach((value: any) => {
+          value.takesPart = !value.takesPart;
+        });
+      }
 
       toggleEdit();
-      if (values.score === "") values.score = 0;
+
       handleSave({ ...record, ...values });
     } catch (errInfo) {
       console.log("Save failed:", errInfo);
@@ -80,22 +92,47 @@ const EditableCell: React.FC<EditableCellProps> = ({
     childNode = editing ? (
       <Form.Item
         style={{ margin: 0 }}
-        name={dataIndex}
-        rules={dataIndex === "time" ? [] : rules}
+        name={dataIndex.startsWith("D") ? "disciplines" : dataIndex}
       >
-        {dataIndex !== "time" ? (
-          <Input
-            type={"number"}
-            ref={inputRef}
-            onPressEnter={save}
+        {dataIndex == "category" ? (
+          <Select
+            style={{ width: 120 }}
             onBlur={save}
+            onSelect={save}
+            onDeselect={save}
+            open
+            options={Object.keys(Categories).map((key) => {
+              return {
+                label: key,
+                value: key,
+              };
+            })}
+          />
+        ) : dataIndex === "team" ? (
+          <Select
+            style={{ width: 120 }}
+            onBlur={save}
+            onSelect={save}
+            onDeselect={save}
+            open
+            options={Object.keys(Teams).map((key: any) => {
+              return {
+                label: Teams[key as keyof typeof Teams],
+                value: key,
+              };
+            })}
+          />
+        ) : dataIndex.startsWith("D") ? (
+          <Checkbox
+            onChange={save}
+            checked={record.disciplines[parseInt(dataIndex[1]) - 1].takesPart}
           />
         ) : (
-          <MaskedInput
+          <Input
+            type={dataIndex == "startingNumber" ? "number" : "text"}
             ref={inputRef}
             onPressEnter={save}
             onBlur={save}
-            mask={"0.00.00"}
           />
         )}
       </Form.Item>
@@ -113,7 +150,7 @@ type EditableTableProps = Parameters<typeof Table>[0];
 
 type ColumnTypes = Exclude<EditableTableProps["columns"], undefined>;
 
-const ScoreTable = (props: IProps) => {
+const EditableTable = (props: IProps) => {
   const components = {
     body: {
       row: EditableRow,
@@ -129,62 +166,61 @@ const ScoreTable = (props: IProps) => {
       ...col,
       onCell: (record: DataType) => ({
         record,
+        dataSource: props.dataSource,
         editable: col.editable,
         dataIndex: col.dataIndex,
         title: col.title,
         handleSave: props.handleSave,
-        rules: props.rules,
       }),
     };
   });
 
-  const createCateogries = () => {
-    let categories = [
-      ...Object.keys(Categories)
-        .slice(...getCategoriesForDiscipline(props.finalKey))
-        .map((key) => {
-          return {
-            label: key,
-            value: key,
-          };
-        }),
-    ];
-
-    if (!categories.find((value) => value.label === props.selectedCategory)) {
-      props.handleCategoryChange(categories[0].value);
-    }
-    return categories;
-  };
-
   return (
-    <div style={{ minHeight: "fit-content" }}>
+    <div>
       <div
         style={{
           display: "flex",
           height: "5vh",
           alignItems: "center",
-          gap: "30px",
+          gap: "14px",
         }}
       >
+        <Button
+          onClick={props.handleAdd}
+          type="primary"
+          icon={<PlusOutlined />}
+          style={{ marginLeft: 16, background: "#d9363e" }}
+        />
+
         <Select
-          style={{ width: 120, marginLeft: 16 }}
-          onChange={props.handleCategoryChange}
+          style={{ width: 120 }}
           value={props.selectedCategory}
+          onChange={props.handleCategoryChange}
           options={[
             {
               label: "Wszyscy",
               value: "Wszyscy",
             },
-            ...createCateogries(),
+            ...Object.keys(Categories).map((key) => {
+              return {
+                label: key,
+                value: key,
+              };
+            }),
           ]}
         />
       </div>
+
       <Table
         components={components}
         rowClassName={() => "editable-row border"}
         bordered
-        showSorterTooltip={false}
         pagination={{ pageSize: 16 }}
+        style={{
+          maxHeight: "95vh",
+          height: "calc(95vh - 22px)",
+          whiteSpace: "pre",
+        }}
         dataSource={props.dataSource}
         columns={columns as ColumnTypes}
       />
@@ -193,13 +229,12 @@ const ScoreTable = (props: IProps) => {
 };
 
 interface IProps {
-  dataSource: Competetors[];
-  handleSave: (row: Competetors) => void;
+  dataSource: DataType[];
+  handleAdd: () => void;
+  handleSave: (row: DataType) => void;
   columns: (ColumnTypes[number] & { editable?: boolean; dataIndex: string })[];
-  rules: Rule[];
-  finalKey: number;
   handleCategoryChange: (key: string) => void;
   selectedCategory: string;
 }
 
-export default ScoreTable;
+export default EditableTable;

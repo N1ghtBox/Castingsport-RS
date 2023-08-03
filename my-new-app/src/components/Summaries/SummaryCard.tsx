@@ -1,7 +1,9 @@
-import { PlusCircleOutlined } from "@ant-design/icons";
+import { CheckCircleFilled, DeleteOutlined, MoreOutlined, PlusCircleOutlined } from "@ant-design/icons";
 import { mergeStyleSets } from "@fluentui/merge-styles";
-import { Avatar } from "antd";
+import { Avatar, Button, Dropdown, Tooltip } from "antd";
 import Paragraph from "antd/es/typography/Paragraph";
+
+const {ipcRenderer} = window.require('electron')
 
 const classNames = mergeStyleSets({
   content: {
@@ -31,12 +33,54 @@ const classNames = mergeStyleSets({
   },
 });
 
-const CompetitionCard = (props: IProps) => {
+const SummaryCard = (props: IProps) => {
   return (
     <div className={classNames.box}>
-      <div className={classNames.content} onClick={props.onClick}>
+      <div className={classNames.content}>
+        {!props.addNewCard ? (
+          <Dropdown
+            menu={{
+              items: [
+                {
+                  key: "1",
+                  label: (
+                    <span onClick={() => props.editComp()}>
+                      Edytuj
+                    </span>
+                  ),
+                },
+                {
+                  key: "2",
+                  danger:true,
+                  label: (
+                    <span onClick={() =>  props.deleteComp()}>
+                      <DeleteOutlined style={{marginRight:'5px'}}/>
+                      Usuń
+                    </span>
+                  ),
+                },
+              ],
+            }}
+            trigger={["click"]}
+          >
+            <Button
+              icon={<MoreOutlined />}
+              style={{
+                fontSize: "20px",
+                position: "absolute",
+                right: "10px",
+                top: "10px",
+                zIndex: "100",
+                border: "none",
+                boxShadow: "none",
+              }}
+            />
+          </Dropdown>
+        ) : null}
+
         {props.addNewCard ? (
           <div
+            onClick={props.onClick}
             style={{
               display: "flex",
               flexDirection: "column",
@@ -46,11 +90,12 @@ const CompetitionCard = (props: IProps) => {
           >
             <PlusCircleOutlined className={classNames.icon} />
             <span style={{ fontSize: "1.2rem", color: "var(--secondary)" }}>
-              Dodaj nowy projekt
+              Dodaj nowe zawody
             </span>
           </div>
         ) : props.competition ? (
           <div
+            onClick={props.onClick}
             style={{
               height: "100%",
               width: "100%",
@@ -84,8 +129,10 @@ const CompetitionCard = (props: IProps) => {
   );
 };
 interface IProps {
-  competition?: { name: string; logo: string; date: string };
+  competition?: { name: string; logo: string; date: string, generated:boolean };
   addNewCard?: boolean;
   onClick: () => void;
+  deleteComp?: () => void
+  editComp?: () => void
 }
-export default CompetitionCard;
+export default SummaryCard;

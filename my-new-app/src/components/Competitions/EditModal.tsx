@@ -1,6 +1,6 @@
 import { Modal, Button, Checkbox } from "antd";
-import { Categories } from "../enums";
-import DataType from "../interfaces/dataType";
+import { Categories } from "../../enums";
+import DataType from "../../interfaces/dataType";
 
 const EditModal = (props: IProps) => {
   return (
