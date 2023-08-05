@@ -36,13 +36,19 @@ type comp = {
   mainJudge: string;
   secretaryJudge: string;
   competetors: any[];
-  finals:any[]
+  finals: any[];
 };
+
+type summary = {
+  id:string,
+  name:string,
+  compIds:string[]
+}
 
 type json = {
   license: string;
   competitions: comp[];
-  summaries:any[]
+  summaries: summary[];
 };
 
 function uuidv4() {
@@ -59,7 +65,11 @@ const createWindow = (): void => {
   try {
     readFileSync("./data.json");
   } catch {
-    writeFileSync("./data.json", { license: "", competitions: [], summaries:[] });
+    writeFileSync("./data.json", {
+      license: "",
+      competitions: [],
+      summaries: [],
+    });
   }
   // let exists =
   // Create the browser window.
@@ -81,72 +91,119 @@ const createWindow = (): void => {
   mainWindow.maximize();
   mainWindow.menuBarVisible = false;
 
+  ipcMain.handle("getCompetitionsWithFinals", async () => {
+    let json: json = await readFile("./data.json");
+    return json.competitions.filter((x) => x.finals.length > 0);
+  });
+
+  ipcMain.handle("getSummaries", async () => {
+    let json: json = await readFile("./data.json");
+    return json.summaries;
+  });
+
+  ipcMain.handle("addSummary", async (_:any, ...args:any[]) => {
+    let json: json = await readFile("./data.json");
+    let newSummary = {
+      ...args[0],
+      id:uuidv4()
+    }
+    json.summaries = [...json.summaries, newSummary]
+    await writeFile("./data.json", json);
+    return newSummary;
+  });
+
   ipcMain.handle("getCompetitions", async () => {
     let json: json = await readFile("./data.json");
     return json.competitions;
   });
 
-  ipcMain.handle("generateFinalResults", async (_:any,...args: any[]) => {
+  ipcMain.handle("generateFinalResults", async (_: any, ...args: any[]) => {
     let json: json = await readFile("./data.json");
-    let id = args[0]
-    let comp = json.competitions.find(x => x.id == id)
-    if(!comp) return false
-    const getScore = (competetor:any, range: [number,number]) => {
-      let score = 0
-      for(let i = range[0]-1; i < range[1]; i++){
-        let element:any = Object.values(competetor.disciplines).find((x:any) => x.number == i + 1)
-        score += typeof element.score == 'string' ? parseFloat(element.score) : element.score
-        score += element.score2 ? typeof element.score2 == 'string' ? parseFloat(element.score2) : element.score2 : 0
-        
+    let id = args[0];
+    let comp = json.competitions.find((x) => x.id == id);
+    if (!comp) return false;
+    const getScore = (competetor: any, range: [number, number]) => {
+      let score = 0;
+      for (let i = range[0] - 1; i < range[1]; i++) {
+        let element: any = Object.values(competetor.disciplines).find(
+          (x: any) => x.number == i + 1
+        );
+        score +=
+          typeof element.score == "string"
+            ? parseFloat(element.score)
+            : element.score;
+        score += element.score2
+          ? typeof element.score2 == "string"
+            ? parseFloat(element.score2)
+            : element.score2
+          : 0;
       }
-      return Math.round(score * 1000) / 1000
-    }
+      return Math.round(score * 1000) / 1000;
+    };
 
-    let scores = comp.competetors.map(x => {
+    let scores = comp.competetors.map((x) => {
       return {
-        name:x.name,
-        club:x.club,
-        category:x.category,
-        team:x.team,
-        girl:x.girl,
-        score3:getScore(x,[3,5]),
-        score5:getScore(x,[1,5]),
-        score7:getScore(x,[1,7]),
-        score9:getScore(x,[1,9]),
-      }
-    })
-
-    let groupedByCategory:any = {Kadet:[], Junior:[], Juniorka:[], Kobieta:[], Senior:[]}
-    for (let i = 0; i < scores.length; i++) {
-      const element = scores[i];
-      groupedByCategory[element.category].push(element)
-      if(element.category === 'Kadet' && element.score3 < element.score5){
-        if(element.girl) groupedByCategory['Juniorka']
-        else groupedByCategory['Junior']
-      }
-    }
-
-    scores = []
-
-    Object.keys(groupedByCategory).forEach(key => {
-      if(key === 'Kadet') groupedByCategory[key].sort((a:any, b:any) => b.score3 - a.score3)
-      else groupedByCategory[key].sort((a:any, b:any) => b.score5 - a.score5)
-      scores = [...scores, ...(groupedByCategory[key] as any[]).map((x:any, index:number) => {return {...x,place:index+1}})]
+        name: x.name,
+        club: x.club,
+        category: x.category,
+        team: x.team,
+        girl: x.girl,
+        score3: getScore(x, [3, 5]),
+        score5: getScore(x, [1, 5]),
+        score7: getScore(x, [1, 7]),
+        score9: getScore(x, [1, 9]),
+      };
     });
 
-    comp.summaryGenerated = true
-    comp.finals = scores
+    let groupedByCategory: any = {
+      Kadet: [],
+      Junior: [],
+      Juniorka: [],
+      Kobieta: [],
+      Senior: [],
+    };
+    for (let i = 0; i < scores.length; i++) {
+      const element = scores[i];
+      groupedByCategory[element.category].push(element);
+      if (element.category === "Kadet" && element.score3 < element.score5) {
+        if (element.girl) groupedByCategory["Juniorka"];
+        else groupedByCategory["Junior"];
+      }
+    }
 
-    json.competitions.splice(json.competitions.findIndex(x => x.id == id), 1, comp)
+    scores = [];
 
-    await writeFile('./data.json', json)
-    return json.competitions
+    Object.keys(groupedByCategory).forEach((key) => {
+      if (key === "Kadet")
+        groupedByCategory[key].sort((a: any, b: any) => b.score3 - a.score3);
+      else groupedByCategory[key].sort((a: any, b: any) => b.score5 - a.score5);
+      scores = [
+        ...scores,
+        ...(groupedByCategory[key] as any[]).map((x: any, index: number) => {
+          return { ...x, place: index + 1 };
+        }),
+      ];
+    });
+
+    comp.summaryGenerated = true;
+    comp.finals = scores;
+
+    json.competitions.splice(
+      json.competitions.findIndex((x) => x.id == id),
+      1,
+      comp
+    );
+
+    await writeFile("./data.json", json);
+    return json.competitions;
   });
 
-  ipcMain.handle('openLinkedIn',async ()=>{
-    await shell.openExternal('https://www.linkedin.com/in/dawid-witczak-568591226/')
-    return
-  })
+  ipcMain.handle("openLinkedIn", async () => {
+    await shell.openExternal(
+      "https://www.linkedin.com/in/dawid-witczak-568591226/"
+    );
+    return;
+  });
 
   ipcMain.handle(
     "checkLicense",

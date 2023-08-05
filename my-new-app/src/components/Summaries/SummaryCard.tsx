@@ -90,10 +90,10 @@ const SummaryCard = (props: IProps) => {
           >
             <PlusCircleOutlined className={classNames.icon} />
             <span style={{ fontSize: "1.2rem", color: "var(--secondary)" }}>
-              Dodaj nowe zawody
+              Dodaj nowy cykl
             </span>
           </div>
-        ) : props.competition ? (
+        ) : props.summary ? (
           <div
             onClick={props.onClick}
             style={{
@@ -104,11 +104,6 @@ const SummaryCard = (props: IProps) => {
               alignItems: "center",
             }}
           >
-            <Avatar
-              style={{ marginBlock: "15px" }}
-              src={props.competition.logo}
-              size={100}
-            />
             <h4
               style={{
                 marginBlock: "10px 5px",
@@ -117,11 +112,8 @@ const SummaryCard = (props: IProps) => {
                 wordBreak: "break-word",
               }}
             >
-              {props.competition.name}
+              {props.summary.name}
             </h4>
-            <Paragraph style={{ marginTop: "auto" }}>
-              {props.competition.date}
-            </Paragraph>
           </div>
         ) : null}
       </div>
@@ -129,7 +121,7 @@ const SummaryCard = (props: IProps) => {
   );
 };
 interface IProps {
-  competition?: { name: string; logo: string; date: string, generated:boolean };
+  summary?: { name: string};
   addNewCard?: boolean;
   onClick: () => void;
   deleteComp?: () => void
