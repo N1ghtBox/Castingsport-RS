@@ -39,11 +39,11 @@ type comp = {
   finals: any[];
 };
 
-type summary = {
-  id:string,
-  name:string,
-  compIds:string[]
-}
+export type summary = {
+  id: string;
+  name: string;
+  compIds: string[];
+};
 
 type json = {
   license: string;
@@ -101,13 +101,24 @@ const createWindow = (): void => {
     return json.summaries;
   });
 
-  ipcMain.handle("addSummary", async (_:any, ...args:any[]) => {
+  ipcMain.handle("getSummary", async (_:any, ...args:any[]) => {
+    let json: json = await readFile("./data.json");
+    return json.summaries.find(x=>x.id === args[0]);
+  });
+
+  
+  ipcMain.handle("getFinalsById", async (_: any, ...args: any[]) => {
+    let json: json = await readFile("./data.json");
+    return json.competitions.filter(x => args[0].includes(x.id)).map(x =>{return{finals:x.finals, name:x.name}});
+  });
+
+  ipcMain.handle("addSummary", async (_: any, ...args: any[]) => {
     let json: json = await readFile("./data.json");
     let newSummary = {
       ...args[0],
-      id:uuidv4()
-    }
-    json.summaries = [...json.summaries, newSummary]
+      id: uuidv4(),
+    };
+    json.summaries = [...json.summaries, newSummary];
     await writeFile("./data.json", json);
     return newSummary;
   });

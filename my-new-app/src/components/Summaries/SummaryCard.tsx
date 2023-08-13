@@ -1,9 +1,10 @@
-import { CheckCircleFilled, DeleteOutlined, MoreOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import {
+  DeleteOutlined,
+  MoreOutlined,
+  PlusCircleOutlined
+} from "@ant-design/icons";
 import { mergeStyleSets } from "@fluentui/merge-styles";
-import { Avatar, Button, Dropdown, Tooltip } from "antd";
-import Paragraph from "antd/es/typography/Paragraph";
-
-const {ipcRenderer} = window.require('electron')
+import { Button, Dropdown } from "antd";
 
 const classNames = mergeStyleSets({
   content: {
@@ -43,18 +44,14 @@ const SummaryCard = (props: IProps) => {
               items: [
                 {
                   key: "1",
-                  label: (
-                    <span onClick={() => props.editComp()}>
-                      Edytuj
-                    </span>
-                  ),
+                  label: <span onClick={() => props.editComp()}>Edytuj</span>,
                 },
                 {
                   key: "2",
-                  danger:true,
+                  danger: true,
                   label: (
-                    <span onClick={() =>  props.deleteComp()}>
-                      <DeleteOutlined style={{marginRight:'5px'}}/>
+                    <span onClick={() => props.deleteComp()}>
+                      <DeleteOutlined style={{ marginRight: "5px" }} />
                       Usuń
                     </span>
                   ),
@@ -102,6 +99,7 @@ const SummaryCard = (props: IProps) => {
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
+              justifyContent:'center'
             }}
           >
             <h4
@@ -121,10 +119,10 @@ const SummaryCard = (props: IProps) => {
   );
 };
 interface IProps {
-  summary?: { name: string};
+  summary?: { name: string };
   addNewCard?: boolean;
   onClick: () => void;
-  deleteComp?: () => void
-  editComp?: () => void
+  deleteComp?: () => void;
+  editComp?: () => void;
 }
 export default SummaryCard;

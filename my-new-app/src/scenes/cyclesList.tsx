@@ -106,11 +106,11 @@ const SummariesList = (props: IProps) => {
       <MenuTop activeTab="summaries" />
       {
         summaries.map(x => (
-          <SummaryCard summary={{name:x.name}} onClick={() => navigate(`/summaries/${x.id}`)} />
+          <SummaryCard key={x.id} summary={{name:x.name}} onClick={() => navigate(`/summaries/${x.id}`)} />
 
         ))
       }
-      <SummaryCard addNewCard onClick={() => setModalOpen(true)} />
+      <SummaryCard key={'new'} addNewCard onClick={() => setModalOpen(true)} />
       <div
         style={{
           position: "absolute",
