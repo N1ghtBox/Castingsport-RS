@@ -1,2 +1,6 @@
 
-my-new-app/data.json
+data.json
+node_modules
+out
+.webpack
+package-lock.json
