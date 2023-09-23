@@ -6,6 +6,7 @@ interface ICompetition{
     logo:string,
     date:string,
     mainJudge:string,
-    secretaryJudge:string
+    secretaryJudge:string,
+    generatedFinals:boolean
 }
 export default ICompetition 

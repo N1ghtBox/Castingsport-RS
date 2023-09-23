@@ -74,20 +74,26 @@ const Start = (props: IProps) => {
   }, [params]);
 
   useEffect(() => {
-    (async () => {
-      messageApi.open(getMessageProps("loading", "Ładowanie projektów...", 3));
+    const fetch = async () => {
+      
+      messageApi.open(getMessageProps("loading", "Ładowanie projektów...", 0, "loading"));
       try {
         let comp = await ipcRenderer.invoke("getCompetitions");
+        messageApi.destroy("loading")
         setListOfCompetiton(comp);
-        messageApi.destroy();
-        messageApi.open(getMessageProps("success", "Załadowano projekty", 0.5));
+        messageApi.open(getMessageProps("success", "Załadowano projekty", 1,"success"));
       } catch {
-        messageApi.destroy();
+        setTimeout(async ()=>{
+          await fetch()
+        },2000)
         messageApi.open(
-          getMessageProps("error", "Błąd podczas ładowania projektów", 1)
+          getMessageProps("error", "Błąd podczas ładowania projektów", 1, "fail")
         );
       }
-    })();
+    }
+
+    fetch()
+
   }, []);
 
   const deleteCompetiion = async (id: string) => {
@@ -318,7 +324,7 @@ const Start = (props: IProps) => {
       ))}
       <CompetitionCard key={'addNew'} addNewCard onClick={() => setModalOpen(true)} />
       <div style={{position:'absolute', bottom:0, width:'100%', textAlign:'center', paddingBlock:'15px'}}>
-        Copyright &copy;	<a className={'linkedIn-link'} onClick={async () => await ipcRenderer.invoke('openLinkedIn')}>Dawid Witczak</a>
+        Copyright 2023 &copy;	<a className={'linkedIn-link'} onClick={async () => await ipcRenderer.invoke('openLinkedIn')}>Dawid Witczak</a>
       </div>
     </div>
   );

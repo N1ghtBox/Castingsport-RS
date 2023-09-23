@@ -6,7 +6,7 @@ import {
 } from "react-router-dom";
 import Layout from "./components//Layout";
 import Start from "./scenes/competitionsList";
-import SummariesList from "./scenes/cyclesList";
+import SummariesList from "./scenes/summaryList";
 import Results from "./scenes/results";
 import ResultsFinals from "./scenes/resultsFinals";
 import ResultsFinalsTeam from "./scenes/resultsFinalsTeam";

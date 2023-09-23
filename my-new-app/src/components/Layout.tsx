@@ -1,7 +1,9 @@
 import {
   EditOutlined,
+  ExportOutlined,
   FilePdfOutlined,
   HomeOutlined,
+  ImportOutlined,
   PrinterOutlined,
   SaveOutlined,
   SettingOutlined,
@@ -106,6 +108,7 @@ const Layout = () => {
     date: "",
     mainJudge: "",
     secretaryJudge: "",
+    generatedFinals:false
   });
   const [currentColumns, setColumns] = useState<any[]>(columns.list.columns);
   const [competitionFilter, setCompetitionFilter] = useState<
@@ -117,7 +120,6 @@ const Layout = () => {
   const [selectedCategory, setSelectedCategory] = useState<string>("Wszyscy");
   const [typeOfTeams, setTypeOfTeams] = useState<string>(Teams.Młodzieżowa);
   const [isList, setIsList] = useState(true);
-  const [intervalId, setIntervalId] = useState<NodeJS.Timer>();
   const [showResults, setShowResults] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [editEntity, setEditEntity] = useState<DataType | undefined>();
@@ -135,8 +137,9 @@ const Layout = () => {
 
   useEffect(() => {
     if (state.key) onChange(state.key);
-    (async () => {
-      let comp = await ipcRenderer.invoke("getById", state.id);
+
+    const fetchData = async ():Promise<[boolean, string]> => {
+      const comp = await ipcRenderer.invoke("getById", state.id);
       setCompetitionInfo({
         id: comp.id,
         name: comp.name,
@@ -144,16 +147,28 @@ const Layout = () => {
         date: comp.date,
         secretaryJudge: comp.secretaryJudge,
         mainJudge: comp.mainJudge,
+        generatedFinals: comp.summaryGenerated
       });
       setDataSource([...comp.competetors]);
-      setIntervalId(setInterval(UpdateComp, 1000 * 60));
-    })();
-    return () => clearInterval(intervalId);
+
+      return [comp.summaryGenerated, comp.id];
+    }
+
+    let generated = false
+    let id = ""
+
+    fetchData()
+      .then(val => [generated, id] = val)
+
+    let intervalId = setInterval(UpdateComp, 1000 * 60)
+
+    return () => cleanUp(intervalId, generated, id)
   }, [state]);
 
-  useEffect(() => {
-    return clearInterval(intervalId);
-  }, []);
+  const cleanUp = (timer:NodeJS.Timer, generated:boolean, id:string) => {
+    (async () => {if(generated) await ipcRenderer.invoke("generateFinalResults", id)})()
+    clearInterval(timer)
+  }
 
   const UpdateComp = async () => {
     let localDatasource, localCompInfo: ICompetition;
@@ -430,7 +445,6 @@ const Layout = () => {
       tabKey,
     };
 
-    clearInterval(intervalId);
     if (showResults)
       if (type === "Indywidualnie")
         navigate("/resultsFinals", {
@@ -522,13 +536,13 @@ const Layout = () => {
             <>
               <Tooltip title="Importuj listę">
                 <FloatButton
-                  icon={<SaveOutlined />}
+                  icon={<ImportOutlined />}
                   onClick={async () => await ImportFile()}
                 />
               </Tooltip>
               <Tooltip title="Wyeksportuj listę">
                 <FloatButton
-                  icon={<SaveOutlined />}
+                  icon={<ExportOutlined />}
                   onClick={async () =>
                     await ipcRenderer.invoke(
                       "exportList",

@@ -1,6 +1,7 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Form, Input, InputRef, Select, Table } from "antd";
 import type { FormInstance } from "antd/es/form";
+import Search from "antd/es/transfer/search";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { Categories, Teams } from "../../enums";
 import DataType from "../../interfaces/dataType";
@@ -151,6 +152,7 @@ type EditableTableProps = Parameters<typeof Table>[0];
 type ColumnTypes = Exclude<EditableTableProps["columns"], undefined>;
 
 const EditableTable = (props: IProps) => {
+  const [searchValue, setSearchValue] = useState('')
   const components = {
     body: {
       row: EditableRow,
@@ -209,6 +211,11 @@ const EditableTable = (props: IProps) => {
             }),
           ]}
         />
+        <Input.Search
+          value={searchValue}
+          onChange={e => setSearchValue(e.target.value)} 
+          style={{width:'150px'}}
+          />
       </div>
 
       <Table
@@ -221,7 +228,7 @@ const EditableTable = (props: IProps) => {
           height: "calc(95vh - 22px)",
           whiteSpace: "pre",
         }}
-        dataSource={props.dataSource}
+        dataSource={props.dataSource.filter(data => data.name.toLowerCase().includes(searchValue.toLocaleLowerCase()))}
         columns={columns as ColumnTypes}
       />
     </div>

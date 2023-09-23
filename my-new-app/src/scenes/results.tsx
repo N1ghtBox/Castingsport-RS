@@ -168,7 +168,7 @@ const Results = (props: IProps) => {
         <td>{result.name}</td>
         <td>{result.club}</td>
         <td>{result.score}</td>
-        <td>{result.time ? result.time : result.score2}</td>
+        <td>{result.time ? result.time : result.score2 ? result.score2 : (result.score * 1.5).toFixed(3)}</td>
         {printWithFinals ? <td style={{fontWeight:700}}>{(result as any).scoreFinal}</td> : null}
         {printWithFinals && [1, 3, 4, 8].includes(state.info.dNumber) ? (
           <td style={{fontWeight:700}}>{(result as any).timeFinal}</td>

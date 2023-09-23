@@ -33,26 +33,36 @@ const SummariesList = (props: IProps) => {
   };
 
   const onOk = async () => {
-    setModalOpen(false)
-    let comp = await ipcRenderer.invoke("addSummary", {name, compIds:ids});
-    navigate(`/summaries/${comp.id}`)
+    setModalOpen(false);
+    let comp = await ipcRenderer.invoke("addSummary", { name, compIds: ids });
+    navigate(`/summaries/${comp.id}`);
   };
 
   useEffect(() => {
-    (async () => {
-      messageApi.open(getMessageProps("loading", "Ładowanie...", 3));
+    const fetch = async () => {
+      
+      messageApi.open(getMessageProps("loading", "Ładowanie projektów...", 0, "loading"));
       try {
-        let comp = await ipcRenderer.invoke("getCompetitionsWithFinals");
+        let comp = await ipcRenderer.invoke("getCompetitions");
+        messageApi.destroy("loading")
         setListOfFinals(comp);
+
         let summaries = await ipcRenderer.invoke("getSummaries");
-        setSummaries(summaries);
-        messageApi.destroy();
-        messageApi.open(getMessageProps("success", "Załadowano", 0.5));
+        setSummaries(summaries || []);
+
+        messageApi.open(getMessageProps("success", "Załadowano", 1,"success"));
       } catch {
-        messageApi.destroy();
-        messageApi.open(getMessageProps("error", "Błąd podczas ładowania", 1));
+        setTimeout(async ()=>{
+          await fetch()
+        },2000)
+        messageApi.open(
+          getMessageProps("error", "Błąd podczas ładowania", 1, "fail")
+        );
       }
-    })();
+    }
+
+    fetch()
+
   }, []);
 
   return (
@@ -104,13 +114,18 @@ const SummariesList = (props: IProps) => {
         </div>
       </Modal>
       <MenuTop activeTab="summaries" />
-      {
-        summaries.map(x => (
-          <SummaryCard key={x.id} summary={{name:x.name}} onClick={() => navigate(`/summaries/${x.id}`)} />
-
-        ))
-      }
-      <SummaryCard key={'new'} addNewCard onClick={() => setModalOpen(true)} />
+      {summaries.map((x) => (
+        <SummaryCard
+          key={x.id}
+          summary={{ name: x.name }}
+          deleteComp={async () => {
+            let localSummaries = await ipcRenderer.invoke("deleteSummary", x.id)
+            setSummaries([...localSummaries])
+          }}
+          onClick={() => navigate(`/summaries/${x.id}`)}
+        />
+      ))}
+      <SummaryCard key={"new"} addNewCard onClick={() => setModalOpen(true)} />
       <div
         style={{
           position: "absolute",
@@ -120,7 +135,7 @@ const SummariesList = (props: IProps) => {
           paddingBlock: "15px",
         }}
       >
-        Copyright &copy;{" "}
+        Copyright 2023 &copy;{" "}
         <a
           className={"linkedIn-link"}
           onClick={async () => await ipcRenderer.invoke("openLinkedIn")}
