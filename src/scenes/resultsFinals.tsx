@@ -178,7 +178,7 @@ const ResultsFinals = (props: IProps) => {
             <tr style={{ borderBottom: "2px solid black" }}>
               <th style={{ width: "5%" }}>Zajęte miejsce</th>
               {columns.map((name) => (
-                <th key={name}>{name}</th>
+                <th key={name}>{name.replace("D","K")}</th>
               ))}
             </tr>
           </thead>

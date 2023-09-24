@@ -256,7 +256,7 @@ const Summary = () => {
           key="name"
           align="center"
         />
-        <Column title="Okręg" dataIndex="club" key="club" align="center" />
+        <Column title="Okręg/Klub" dataIndex="club" key="club" align="center" />
         {competitionNames.map((name) => (
           <ColumnGroup
             title={<span style={{ fontSize: "12px" }}>{name}</span>}

@@ -47,39 +47,39 @@ const tabs: TabsProps["items"] = [
   },
   {
     key: "D1",
-    label: `D1`,
+    label: `K1`,
   },
   {
     key: "D2",
-    label: `D2`,
+    label: `K2`,
   },
   {
-    key: "D3",
-    label: `D3`,
+    key: "K3",
+    label: `K3`,
   },
   {
     key: "D4",
-    label: `D4`,
+    label: `K4`,
   },
   {
     key: "D5",
-    label: `D5`,
+    label: `K5`,
   },
   {
     key: "D6",
-    label: `D6`,
+    label: `K6`,
   },
   {
     key: "D7",
-    label: `D7`,
+    label: `K7`,
   },
   {
     key: "D8",
-    label: `D8`,
+    label: `K8`,
   },
   {
     key: "D9",
-    label: `D9`,
+    label: `K9`,
   },
   {
     key: "T10",
@@ -165,7 +165,7 @@ const Layout = () => {
     return () => cleanUp(intervalId, generated, id)
   }, [state]);
 
-  const cleanUp = (timer:NodeJS.Timer, generated:boolean, id:string) => {
+  const cleanUp = (timer:NodeJS.Timeout, generated:boolean, id:string) => {
     (async () => {if(generated) await ipcRenderer.invoke("generateFinalResults", id)})()
     clearInterval(timer)
   }

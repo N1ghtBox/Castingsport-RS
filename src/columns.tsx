@@ -32,7 +32,7 @@ let info = [
 
   },
   {
-    title: 'Okręg',
+    title: 'Okręg/Klub',
     dataIndex: 'club',
     width: '15%',
     onFilter: (value: string, record:DataType) => record.club.indexOf(value) === 0,
@@ -370,7 +370,7 @@ const columns:IColumns = {
             } as any
         }),
         {
-          title:'D1-5',
+          title:'K1-5',
           sorter:(a:any, b:any) => {
             let totalScoreA = getTotalScoreT5(a)
             let totalScoreB = getTotalScoreT5(b)

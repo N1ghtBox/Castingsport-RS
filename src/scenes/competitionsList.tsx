@@ -58,6 +58,7 @@ const Start = (props: IProps) => {
   const [license, setLicense] = useState("");
   const [mainJudge, setMainJudge] = useState("");
   const [secretaryJudge, setSecretaryJudge] = useState("");
+  const [id, setId] = useState("");
   const [editDate, setEditDate] = useState<[Dayjs, Dayjs]>();
   const [logo, setLogo] = useState<string>("");
   const [date, setDate] = useState<string>("");
@@ -108,6 +109,7 @@ const Start = (props: IProps) => {
     setNewCompName(entity.name);
     setMainJudge(entity.mainJudge);
     setDate(entity.date);
+    setId(entity.id)
     let date = entity.date.split(" ");
     let range = date[0].split("-");
     let month = months.findIndex((month) => month === date[1]) + 1;
@@ -168,10 +170,12 @@ const Start = (props: IProps) => {
         date,
         mainJudge,
         secretaryJudge,
+        id
       });
       setEditDate(undefined);
       setModalOpen(false);
       setLogo("");
+      setId("");
       setNewCompName("");
       setMainJudge("");
       setSecretaryJudge("");
