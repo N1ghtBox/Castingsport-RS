@@ -66,14 +66,6 @@ const createWindow = (): void => {
 
   autoUpdater.setFeedURL({ url })
 
-  autoUpdater.on('checking-for-update',() =>{
-    console.log('test')
-  })
-
-  autoUpdater.on('error',(error:Error) =>{
-    console.log(error.message)
-  })
-
   autoUpdater.on('update-downloaded', (event, releaseNotes, releaseName) => {
     const dialogOpts = {
       type: 'info',
