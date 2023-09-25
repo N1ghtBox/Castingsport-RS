@@ -10,7 +10,7 @@ import { rendererConfig } from './webpack.renderer.config';
 
 const config: ForgeConfig = {
   packagerConfig: {
-    icon:'./src/image.ico'
+    icon:'./src/image'
   },
   rebuildConfig: {},
   makers: [new MakerSquirrel({setupIcon:'./src/image.ico'}), new MakerZIP({}, ['darwin']), new MakerRpm({}), new MakerDeb({})],
