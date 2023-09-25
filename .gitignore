@@ -1,7 +1,6 @@
 
 data.json
 node_modules
-out/Castingsport-RS-win32-x64
-out/my-new-app-win32-x64
+out
 .webpack
 package-lock.json
