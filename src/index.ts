@@ -61,7 +61,7 @@ function uuidv4() {
 let mainWindow: BrowserWindow;
 
 const createWindow = (): void => {
-  const server = "hazel-n1ghtbox.vercel.app"
+  const server = "https://hazel-n1ghtbox.vercel.app"
   const url = `${server}/update/${process.platform}/${app.getVersion()}`
 
   autoUpdater.setFeedURL({ url })
@@ -82,8 +82,8 @@ const createWindow = (): void => {
   })
   try {
     readFileSync("./data.json");
-  } catch {
     autoUpdater.checkForUpdates()
+  } catch {
     writeFileSync("./data.json", {
       license: "",
       competitions: [],
@@ -325,7 +325,7 @@ const createWindow = (): void => {
     let oldComp = json.competitions[compIndex];
     json.competitions[compIndex] = {
       ...oldComp,
-      competetors: args[0].competetors,
+      competetors: args[1] ? args[0].competetors.filter((x:any) => x.startingNumber) : args[0].competetors,
     };
     await writeFile("./data.json", json);
     return true;

@@ -54,7 +54,7 @@ const tabs: TabsProps["items"] = [
     label: `K2`,
   },
   {
-    key: "K3",
+    key: "D3",
     label: `K3`,
   },
   {
@@ -138,7 +138,7 @@ const Layout = () => {
   useEffect(() => {
     if (state.key) onChange(state.key);
 
-    const fetchData = async ():Promise<[boolean, string]> => {
+    const fetchData = async ():Promise<string> => {
       const comp = await ipcRenderer.invoke("getById", state.id);
       setCompetitionInfo({
         id: comp.id,
@@ -151,26 +151,24 @@ const Layout = () => {
       });
       setDataSource([...comp.competetors]);
 
-      return [comp.summaryGenerated, comp.id];
+      return comp.id;
     }
 
-    let generated = false
     let id = ""
 
     fetchData()
-      .then(val => [generated, id] = val)
+      .then(val => id = val)
 
     let intervalId = setInterval(UpdateComp, 1000 * 60)
 
-    return () => cleanUp(intervalId, generated, id)
+    return () => cleanUp(intervalId)
   }, [state]);
 
-  const cleanUp = (timer:NodeJS.Timeout, generated:boolean, id:string) => {
-    (async () => {if(generated) await ipcRenderer.invoke("generateFinalResults", id)})()
+  const cleanUp = (timer:NodeJS.Timeout) => {
     clearInterval(timer)
   }
 
-  const UpdateComp = async () => {
+  const UpdateComp = async (removeEmpty:boolean = false) => {
     let localDatasource, localCompInfo: ICompetition;
     setCompetitionInfo((prev) => {
       localCompInfo = prev;
@@ -185,7 +183,7 @@ const Layout = () => {
       name: localCompInfo.name,
       id: localCompInfo.id,
       competetors: localDatasource,
-    });
+    },removeEmpty);
     messageApi.destroy();
     messageApi.open(getMessageProps("success", "Zapisano", 2));
   };
@@ -564,7 +562,8 @@ const Layout = () => {
           {
             title: <HomeOutlined />,
             onClick: async () => {
-              await UpdateComp();
+              await UpdateComp(true);
+              if(competitionInfo.generatedFinals) await ipcRenderer.invoke("generateFinalResults", competitionInfo.id)
               navigate("/");
             },
           },

@@ -43,3 +43,14 @@ body {
   border-bottom:1px solid black !important;
   padding-block: 5px !important;
 }
+
+.summaryColumn.left{
+  border-left: 1px solid #f0f0f0;
+}
+.summaryColumn.right{
+  border-right: 1px solid #f0f0f0;
+}
+.summaryColumnGroup{
+  max-width: 300px;
+  min-width: 200px;
+}

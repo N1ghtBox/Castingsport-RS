@@ -4,6 +4,7 @@ import { useLoaderData, useNavigate } from "react-router-dom";
 import { summary } from "../";
 import { HomeOutlined } from "@ant-design/icons";
 import { Categories } from "../enums";
+import { x } from "pdfkit";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -22,8 +23,8 @@ type score = {
   place: number;
   score3: number;
   score5: number;
-  score7: number;
-  score9: number;
+  // score7: number;
+  // score9: number;
 };
 
 type mergedFinals = final & { scores: score[] };
@@ -33,7 +34,7 @@ const Summary = () => {
   const summaryData = useLoaderData() as summary;
   const navigate = useNavigate();
   const [finals, setFinals] = useState<mergedFinals[]>([]);
-  const [competitionNames, setNames] = useState<string[]>([]);
+  const [competitions, setCompetitions] = useState<string[]>([]);
   const [selectedCategory, setSelectedCategory] =
     useState<keyof typeof Categories>("Kadet");
 
@@ -42,7 +43,7 @@ const Summary = () => {
       const localFinals: { name: string; scores: finalsWithScores[] }[] =
         await ipcRenderer.invoke("getFinalsById", summaryData.compIds);
 
-      setNames(localFinals.map((x) => x.name));
+        setCompetitions(localFinals.map((x) => x.name));
 
       setFinals(mergeFinals(localFinals) || []);
     })();
@@ -76,11 +77,9 @@ const Summary = () => {
     };
     for (let i = 0; i < finals.length; i++) {
       const final = finals[i];
-      console.log(final.scores.filter(x =>x.category === Categories.Senior))
       for (let j = 0; j < final.scores.length; j++) {
         const competetor = final.scores[j];
         let indexInList = CompetetorsIndexInList(mergedFinals, competetor);
-        if(competetor.name == "Bartosz Stawiński") console.log(indexInList, mergedFinals[indexInList])
         if (indexInList < 0)
           mergedFinals.push({
             ...competetor,
@@ -90,8 +89,8 @@ const Summary = () => {
                 place: competetor.place,
                 score3: competetor.score3,
                 score5: competetor.score5,
-                score7: competetor.score7,
-                score9: competetor.score9,
+                // score7: competetor.score7,
+                // score9: competetor.score9,
               },
             ],
           });
@@ -101,8 +100,8 @@ const Summary = () => {
             place: competetor.place,
             score3: competetor.score3,
             score5: competetor.score5,
-            score7: competetor.score7,
-            score9: competetor.score9,
+            // score7: competetor.score7,
+            // score9: competetor.score9,
           });
       }
       for (let j = 0; j < mergedFinals.length; j++) {
@@ -120,8 +119,8 @@ const Summary = () => {
                 categoryCounts[competetor.category as keyof typeof Categories],
               score3: 0,
               score5: 0,
-              score7: 0,
-              score9: 0,
+              // score7: 0,
+              // score9: 0,
             });
           });
         }
@@ -165,7 +164,6 @@ const Summary = () => {
     for (let i = 0; i < Math.max(a.length, b.length); i++) {
       if(a[i] != b[i]) missMatchedCharacters += 1
     }
-    if(b == 'Paprzycki' && a == 'Paprzyczki') console.log(missMatchedCharacters)
     return missMatchedCharacters <= 1
   }
 
@@ -257,8 +255,9 @@ const Summary = () => {
           align="center"
         />
         <Column title="Okręg/Klub" dataIndex="club" key="club" align="center" />
-        {competitionNames.map((name) => (
+        {competitions.map(name => (
           <ColumnGroup
+            className={'summaryColumnGroup'}
             title={<span style={{ fontSize: "12px" }}>{name}</span>}
             align="center"
             key={name}
@@ -267,9 +266,10 @@ const Summary = () => {
               title="Miejsce"
               key={"place"}
               align="center"
+              className={`summaryColumn left`}
               render={(val: mergedFinals) => (
                 <span style={{ fontWeight: 700 }}>
-                  {val.scores.find((x) => x.key == name).place}
+                  {val.scores.find(x => x.key == name).place}
                 </span>
               )}
             />
@@ -277,6 +277,7 @@ const Summary = () => {
               title="Wynik"
               key={"score"}
               align="center"
+              className={`summaryColumn right`}
               render={(val: mergedFinals) => (
                 <span style={{ fontWeight: 700 }}>
                   {val.scores.find((x) => x.key == name).score5}
