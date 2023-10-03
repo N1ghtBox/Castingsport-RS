@@ -12,6 +12,7 @@ import ResultsFinals from "./scenes/resultsFinals";
 import ResultsFinalsTeam from "./scenes/resultsFinalsTeam";
 import Settings from "./scenes/settings";
 import Summary from "./scenes/Summary";
+import SummaryPrint from "./scenes/SummaryPrint";
 const { ipcRenderer } = window.require("electron");
 
 const checkLicense = async () => {
@@ -40,6 +41,13 @@ const router = createHashRouter(
       <Route
         path="/summaries"
         element={<SummariesList />}
+        loader={async () => {
+          return await checkLicense();
+        }}
+      />
+      <Route
+        path="/summaryPrint"
+        element={<SummaryPrint />}
         loader={async () => {
           return await checkLicense();
         }}

@@ -1,10 +1,21 @@
-import { Breadcrumb, Select, Table } from "antd";
-import React, { useEffect, useState } from "react";
+import {
+  HomeOutlined,
+  PrinterOutlined,
+  SettingOutlined
+} from "@ant-design/icons";
+import {
+  Breadcrumb,
+  ConfigProvider,
+  FloatButton,
+  Select,
+  Table,
+  Tooltip
+} from "antd";
+import React, { useCallback, useEffect, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
 import { summary } from "../";
-import { HomeOutlined } from "@ant-design/icons";
 import { Categories } from "../enums";
-import { x } from "pdfkit";
+import { KeysOfType } from "../HelperTypes";
 
 const { ipcRenderer } = window.require("electron");
 
@@ -39,13 +50,20 @@ const Summary = () => {
     useState<keyof typeof Categories>("Kadet");
 
   useEffect(() => {
+    if (!competitions) return;
+    const columnGroups = document.querySelectorAll<HTMLDivElement>(
+      ".summaryColumnGroup"
+    );
+    let width = (window.outerWidth - 5 * 100) / competitions.length;
+    columnGroups.forEach((x) => (x.style.width = `${width}px`));
+  }, [competitions]); 
+
+  useEffect(() => {
     (async () => {
       const localFinals: { name: string; scores: finalsWithScores[] }[] =
         await ipcRenderer.invoke("getFinalsById", summaryData.compIds);
-
         setCompetitions(localFinals.map((x) => x.name));
-
-      setFinals(mergeFinals(localFinals) || []);
+        setFinals(mergeFinals(localFinals) || []);
     })();
   }, []);
 
@@ -112,7 +130,7 @@ const Summary = () => {
             competetor.scores.map((x) => x.key)
           );
           missingCompetitions.forEach((name) => {
-            if(competetor.scores.length == i + 1) return
+            if (competetor.scores.length == i + 1) return;
             competetor.scores.push({
               key: name,
               place:
@@ -149,9 +167,15 @@ const Summary = () => {
   };
 
   const CompetetorsIndexInList = (list: mergedFinals[], competetor: final) => {
-    let [firstName, secondName] = competetor.name.trim().split(" ") as [string, string];
+    let [firstName, secondName] = competetor.name.trim().split(" ") as [
+      string,
+      string
+    ];
     return list.findIndex((x) => {
-      let [existingFirstName, existingSecondName] = x.name.split(" ") as [string, string];
+      let [existingFirstName, existingSecondName] = x.name.split(" ") as [
+        string,
+        string
+      ];
       return (
         compareToStrings(firstName, existingFirstName) &&
         compareToStrings(secondName, existingSecondName)
@@ -159,13 +183,13 @@ const Summary = () => {
     });
   };
 
-  const compareToStrings = (a:string, b:string): boolean => {
-    let missMatchedCharacters = 0
+  const compareToStrings = (a: string, b: string): boolean => {
+    let missMatchedCharacters = 0;
     for (let i = 0; i < Math.max(a.length, b.length); i++) {
-      if(a[i] != b[i]) missMatchedCharacters += 1
+      if (a[i] != b[i]) missMatchedCharacters += 1;
     }
-    return missMatchedCharacters <= 1
-  }
+    return missMatchedCharacters <= 1;
+  };
 
   const handleCategoryChange = (category: keyof typeof Categories) => {
     setSelectedCategory(category);
@@ -184,27 +208,55 @@ const Summary = () => {
     return categories;
   };
 
-  const sortByScores = (a: mergedFinals, b: mergedFinals) => {
-    return (
-      b.scores
-        .map((x) => x.score5)
-        .reduce((totalScore, score) => totalScore + score) -
-      a.scores
-        .map((x) => x.score5)
-        .reduce((totalScore, score) => totalScore + score)
-    );
-  };
+  const SumByProperty = useCallback((propety: KeysOfType<score, number>) => {
+    return (scores: score[]) =>
+      scores
+        .map((x) => x[propety])
+        .reduce((totalScore, score) => totalScore + score);
+  }, []);
 
-  const sortByPlaces = (a: mergedFinals, b: mergedFinals) => {
-    return (
-      a.scores
-        .map((x) => x.place)
-        .reduce((totalScore, score) => totalScore + score) -
-      b.scores
-        .map((x) => x.place)
-        .reduce((totalScore, score) => totalScore + score)
+  const sortByScores = useCallback((a: mergedFinals, b: mergedFinals) => {
+    let getTotalScore = SumByProperty(
+      ScoreForCategory()
     );
-  };
+    return getTotalScore(b.scores) - getTotalScore(a.scores);
+  }, []);
+
+  const sortByPlaces = useCallback((a: mergedFinals, b: mergedFinals) => {
+    let getTotalScore = SumByProperty("place");
+    return getTotalScore(a.scores) - getTotalScore(b.scores);
+  }, []);
+
+  const FindByCompetitionName = useCallback(
+    (
+      scores: score[],
+      compName: string,
+      property: KeysOfType<score, number>
+    ) => {
+      return scores.find((x) => x.key == compName)[property];
+    },
+    []
+  );
+
+  const PrintOrExportSummary = useCallback(
+    (action: "printResults" | "exportToPdf") => {
+      let localFinals = finals
+        .filter((x) => x.category === selectedCategory)
+        .sort(sortByScores)
+        .sort(sortByPlaces)
+        .map((x: mergedFinals, place: number) => {
+          return { ...x, key: place + 1 , totalPlace:SumByProperty("place")(x.scores), totalScore:SumByProperty(ScoreForCategory())(x.scores) };
+        });
+      navigate(`/summaryPrint`, {
+        state: { summaryData, finals: localFinals, action, competitions},
+      });
+    },
+    [finals, competitions, summaryData]
+  );
+
+  const ScoreForCategory = () => {
+    return selectedCategory === "Kadet" ? "score3" : "score5"
+  }
 
   return (
     <>
@@ -238,6 +290,25 @@ const Summary = () => {
           options={[...createCategories()]}
         />
       </div>
+      <ConfigProvider
+        theme={{
+          token: {
+            colorPrimary: "#d9363e",
+          },
+        }}
+      >
+        <FloatButton.Group
+          trigger="click"
+          type="primary"
+          style={{ right: 24 }}
+          className={"changeBg"}
+          icon={<SettingOutlined />}
+        >
+          <Tooltip title="Wydrukuj">
+            <FloatButton icon={<PrinterOutlined />} onClick={() => PrintOrExportSummary('printResults')} />
+          </Tooltip>
+        </FloatButton.Group>
+      </ConfigProvider>
       <Table
         dataSource={finals
           .filter((x) => x.category === selectedCategory)
@@ -248,6 +319,7 @@ const Summary = () => {
           })}
         key="table"
       >
+        <Column title="Miejsce" dataIndex="key" key="place" align="center" />
         <Column
           title="Imię i nazwisko"
           dataIndex="name"
@@ -255,9 +327,9 @@ const Summary = () => {
           align="center"
         />
         <Column title="Okręg/Klub" dataIndex="club" key="club" align="center" />
-        {competitions.map(name => (
+        {competitions.map((name, i) => (
           <ColumnGroup
-            className={'summaryColumnGroup'}
+            className={`summaryColumnGroup ${i % 2 == 0 ? 'summaryBackgroundChange' : ''}`}
             title={<span style={{ fontSize: "12px" }}>{name}</span>}
             align="center"
             key={name}
@@ -266,38 +338,46 @@ const Summary = () => {
               title="Miejsce"
               key={"place"}
               align="center"
-              className={`summaryColumn left`}
+              className={`summaryColumn left ${i % 2 == 0 ? 'summaryBackgroundChange' : ''}`}
               render={(val: mergedFinals) => (
                 <span style={{ fontWeight: 700 }}>
-                  {val.scores.find(x => x.key == name).place}
+                  {FindByCompetitionName(val.scores, name, "place")}
                 </span>
               )}
             />
             <Column
-              title="Wynik"
+              title="Punkty"
               key={"score"}
               align="center"
-              className={`summaryColumn right`}
+              className={`summaryColumn right ${i % 2 == 0 ? 'summaryBackgroundChange' : ''}`}
               render={(val: mergedFinals) => (
                 <span style={{ fontWeight: 700 }}>
-                  {val.scores.find((x) => x.key == name).score5}
+                  {FindByCompetitionName(
+                    val.scores,
+                    name,
+                    ScoreForCategory()
+                  )}
                 </span>
               )}
             />
           </ColumnGroup>
         ))}
         <Column
-          title="Łączny wynik"
+          title="Łączna ilość punktów"
           key="totalScore"
           align="center"
           render={(val: mergedFinals) =>
-            val.scores
-              .map((x) => x.score5)
-              .reduce((totalScore, score) => totalScore + score)
-              .toFixed(2)
+            SumByProperty(ScoreForCategory())(
+              val.scores
+            ).toFixed(2)
           }
         />
-        <Column title="Miejsce" dataIndex="key" key="club" align="center" />
+        <Column
+          title="Ilość punktów"
+          key="totalScore"
+          align="center"
+          render={(val: mergedFinals) => SumByProperty("place")(val.scores)}
+        />
       </Table>
     </>
   );

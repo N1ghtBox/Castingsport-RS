@@ -1,6 +1,5 @@
-import React, { useState } from "react";
-import { Switch, Transfer } from "antd";
-import type { TransferDirection } from "antd/es/transfer";
+import { Transfer } from "antd";
+import { useState } from "react";
 
 interface RecordType {
   key: string;
@@ -20,7 +19,7 @@ const SummaryTransfer = (props: IProps) => {
     sourceSelectedKeys: string[],
     targetSelectedKeys: string[]
   ) => {
-    setSelectedKeys([...sourceSelectedKeys, ...targetSelectedKeys]);
+    setSelectedKeys([...targetSelectedKeys, ...sourceSelectedKeys]);
   };
 
   return (

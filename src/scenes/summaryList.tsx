@@ -43,7 +43,7 @@ const SummariesList = (props: IProps) => {
       
       messageApi.open(getMessageProps("loading", "Ładowanie projektów...", 0, "loading"));
       try {
-        let comp = await ipcRenderer.invoke("getCompetitions");
+        let comp = await ipcRenderer.invoke("getCompetitionsWithFinals");
         messageApi.destroy("loading")
         setListOfFinals(comp);
 
@@ -106,7 +106,7 @@ const SummariesList = (props: IProps) => {
             setIds={(ids: string[]) => setIds([...ids])}
             data={listOfFinals.map((value) => {
               return {
-                key: value.id,
+                key: value.finalId,
                 title: value.name,
               };
             })}

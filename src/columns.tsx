@@ -326,7 +326,7 @@ const columns:IColumns = {
           ...info,
           ...Array.from({length:3}, (_:any, i: number) => {
             return {
-                title:`D${i + 3}`,
+                title:`K${i + 3}`,
                 align:'center',
                 render: (_:any, value:any) => {
                     let discipline = value.disciplines[i+2]
@@ -357,7 +357,7 @@ const columns:IColumns = {
           ...info,
           ...Array.from({length:5}, (_:any, i: number) => {
             return {
-                title:`D${i + 1}`,
+                title:`K${i + 1}`,
                 align:'center',
                 render: (_:any, value:any) => {
                   let discipline = value.disciplines[i]
@@ -392,7 +392,7 @@ const columns:IColumns = {
           ...info,
           ...Array.from({length:2}, (_:any, i: number) => {
             return {
-                title:`D${i + 6}`,
+                title:`K${i + 6}`,
                 align:'center',
                 render: (_:any, value:any) => {
                     let discipline = value.disciplines[i + 5]
@@ -403,7 +403,7 @@ const columns:IColumns = {
             } as any
         }),
         {
-          title:'D6-7',
+          title:'K6-7',
           sorter:(a:any, b:any) => {
             let totalScoreA = getTotalScoreT12(a)
             let totalScoreB = getTotalScoreT12(b)
@@ -425,7 +425,7 @@ const columns:IColumns = {
           ...info,
           ...Array.from({length:2}, (_:any, i: number) => {
             return {
-                title:`D${i + 8}`,
+                title:`K${i + 8}`,
                 align:'center',
                 render: (_:any, value:any) => {
                     let discipline = value.disciplines[i + 7]
@@ -434,7 +434,7 @@ const columns:IColumns = {
             } as any
         }),
         {
-          title:'D8-9',
+          title:'K8-9',
           sorter:(a:any, b:any) => {
             let totalScoreA = getTotalScoreT13(a)
             let totalScoreB = getTotalScoreT13(b)

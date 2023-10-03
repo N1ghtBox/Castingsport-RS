@@ -43,14 +43,35 @@ body {
   border-bottom:1px solid black !important;
   padding-block: 5px !important;
 }
-
 .summaryColumn.left{
   border-left: 1px solid #f0f0f0;
 }
 .summaryColumn.right{
   border-right: 1px solid #f0f0f0;
 }
-.summaryColumnGroup{
-  max-width: 300px;
-  min-width: 200px;
+.summaryBackgroundChange{
+  background-color: #e7e7e7 !important;
+}
+.table{
+  width: 100%;
+  border-spacing: 0;
+}
+.table *{
+  border: 1px solid black;
+  text-align: center;
+  font-size: .8rem;
+  padding-block: 10px;
+}
+.table thead th:not(#empty),
+.table thead td{
+  background-color: #c7c7c7;
+  max-width: 100px;
+}
+
+.oddColumn{
+  background-color: #c7c7c7;
+}
+
+.important{
+  font-weight: 800;
 }
