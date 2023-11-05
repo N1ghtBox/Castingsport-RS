@@ -57,15 +57,22 @@ body {
   border-spacing: 0;
 }
 .table *{
-  border: 1px solid black;
   text-align: center;
-  font-size: .8rem;
+  font-size: .6rem;
   padding-block: 10px;
+  border: 1px solid black;
 }
 .table thead th:not(#empty),
 .table thead td{
   background-color: #c7c7c7;
   max-width: 100px;
+}
+.table #empty{
+  border: none;
+  border-right: 1px solid black;
+  border-bottom: 1px solid black;
+  font-size: 1.2rem;
+  font-weight: normal ;
 }
 
 .oddColumn{
@@ -74,4 +81,12 @@ body {
 
 .important{
   font-weight: 800;
+}
+
+#title{
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  width: 100%;
+  display: block;
 }

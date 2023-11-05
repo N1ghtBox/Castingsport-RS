@@ -44,6 +44,19 @@ const SummaryPrint = () => {
       if (ev.code === "Escape")
         navigate(`/summaries/${state.summaryData.id}`);
     });
+    ipcRenderer.addListener("success", () => {
+      navigate(`/summaries/${state.summaryData.id}`);
+    });
+    (async () => {
+      ipcRenderer.invoke(
+        state.action,
+        `${state.summaryData.name.replace(' ','_')}_${state.finals[0].category}.pdf`
+      );
+    })();
+    return () => {
+      document.removeEventListener("keydown", () => {});
+      ipcRenderer.removeAllListeners("success");
+    };
   },[state])
 
   const CreateRow = useCallback((final: mergedFinals) => {
@@ -71,6 +84,7 @@ const SummaryPrint = () => {
 
   return (
     <div style={{ width: "100vw", minHeight: "100vh" }}>
+      <span id="title">{state.summaryData.name} - Klasyfikacja generalna <br/> {state.finals[0].category == 'Kadet' ? '3-boju' : '5-boju'} w kategorii {state.finals[0].category}</span>
       <table className="table">
         <thead>
           <tr>

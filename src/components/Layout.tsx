@@ -245,6 +245,7 @@ const Layout = () => {
 
     if (item.category !== row.category) {
       let set: number = DisciplinesForCategories[row.category as any] as any;
+      if(row.category === Categories.Kadet && row.name.split(" ")[0].at(-1) === 'a') item.girl = true;
       row.disciplines = Object.values(row.disciplines).map(
         (discipline: any, i: number) => {
           if (row.category === Categories.Kadet)

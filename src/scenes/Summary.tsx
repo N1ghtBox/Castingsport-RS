@@ -1,4 +1,5 @@
 import {
+  FilePdfOutlined,
   HomeOutlined,
   PrinterOutlined,
   SettingOutlined
@@ -60,7 +61,7 @@ const Summary = () => {
 
   useEffect(() => {
     (async () => {
-      const localFinals: { name: string; scores: finalsWithScores[] }[] =
+      const localFinals: { name: string; scores: {individual: finalsWithScores[]} }[] =
         await ipcRenderer.invoke("getFinalsById", summaryData.compIds);
         setCompetitions(localFinals.map((x) => x.name));
         setFinals(mergeFinals(localFinals) || []);
@@ -68,35 +69,35 @@ const Summary = () => {
   }, []);
 
   const mergeFinals = (
-    finals: { name: string; scores: finalsWithScores[] }[]
+    finals: { name: string; scores: {individual: finalsWithScores[]} }[]
   ) => {
     let mergedFinals: mergedFinals[] = [];
     let categoryCounts: { [K in keyof typeof Categories]: number } = {
       Kadet: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores),
+        finals.map((x) => x.scores.individual),
         Categories.Kadet
       ),
       Junior: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores),
+        finals.map((x) => x.scores.individual),
         Categories.Junior
       ),
       Juniorka: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores),
+        finals.map((x) => x.scores.individual),
         Categories.Juniorka
       ),
       Kobieta: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores),
+        finals.map((x) => x.scores.individual),
         Categories.Kobieta
       ),
       Senior: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores),
+        finals.map((x) => x.scores.individual),
         Categories.Senior
       ),
     };
     for (let i = 0; i < finals.length; i++) {
       const final = finals[i];
-      for (let j = 0; j < final.scores.length; j++) {
-        const competetor = final.scores[j];
+      for (let j = 0; j < final.scores.individual.length; j++) {
+        const competetor = final.scores.individual[j];
         let indexInList = CompetetorsIndexInList(mergedFinals, competetor);
         if (indexInList < 0)
           mergedFinals.push({
@@ -178,7 +179,7 @@ const Summary = () => {
       ];
       return (
         compareToStrings(firstName, existingFirstName) &&
-        compareToStrings(secondName, existingSecondName)
+        compareToStrings(secondName, existingSecondName) && x.category == competetor.category
       );
     });
   };
@@ -241,7 +242,7 @@ const Summary = () => {
   const PrintOrExportSummary = useCallback(
     (action: "printResults" | "exportToPdf") => {
       let localFinals = finals
-        .filter((x) => x.category === selectedCategory)
+        .filter(filterByCategory)
         .sort(sortByScores)
         .sort(sortByPlaces)
         .map((x: mergedFinals, place: number) => {
@@ -253,6 +254,10 @@ const Summary = () => {
     },
     [finals, competitions, summaryData]
   );
+
+  const filterByCategory = useCallback((comp: mergedFinals)=>{
+    return comp.category === selectedCategory
+  },[selectedCategory])
 
   const ScoreForCategory = () => {
     return selectedCategory === "Kadet" ? "score3" : "score5"
@@ -304,6 +309,12 @@ const Summary = () => {
           className={"changeBg"}
           icon={<SettingOutlined />}
         >
+          <Tooltip title="Wyeksportuj do PDF">
+            <FloatButton
+              icon={<FilePdfOutlined />}
+              onClick={() => PrintOrExportSummary("exportToPdf")}
+            />
+          </Tooltip>
           <Tooltip title="Wydrukuj">
             <FloatButton icon={<PrinterOutlined />} onClick={() => PrintOrExportSummary('printResults')} />
           </Tooltip>
@@ -311,7 +322,7 @@ const Summary = () => {
       </ConfigProvider>
       <Table
         dataSource={finals
-          .filter((x) => x.category === selectedCategory)
+          .filter(filterByCategory)
           .sort(sortByScores)
           .sort(sortByPlaces)
           .map((x: mergedFinals, place: number) => {
@@ -319,7 +330,7 @@ const Summary = () => {
           })}
         key="table"
       >
-        <Column title="Miejsce" dataIndex="key" key="place" align="center" />
+        <Column title="Miejsce" dataIndex="key" key="place" align="center"/>
         <Column
           title="Imię i nazwisko"
           dataIndex="name"
