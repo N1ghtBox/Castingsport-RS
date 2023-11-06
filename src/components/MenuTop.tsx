@@ -33,7 +33,7 @@ const MenuTop = (props : IProps) => {
       onClick={onClick}
       selectedKeys={[props.activeTab]}
       mode="horizontal"
-      style={{position:'absolute', top:0, width:'100%'}}
+      style={{width:'100%'}}
       items={items}
     />
   );

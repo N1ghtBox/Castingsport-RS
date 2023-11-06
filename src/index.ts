@@ -16,6 +16,14 @@ import { Categories, Teams } from "./enums";
 declare const MAIN_WINDOW_WEBPACK_ENTRY: string;
 declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
+export type team = {
+  name:string,
+  team:any[],
+  category:string,
+  score:number,
+  place:number,
+}
+
 const filePath = isDev ? "./data.json" : "./../data.json";
 
 const decipher = (salt: string) => {
@@ -135,14 +143,6 @@ const generateTeamsScores = async (comp:comp):Promise<any[]> => {
     };
   });
   
-  type team = {
-    name:string,
-    team:any[],
-    category:string,
-    score:number,
-    place:number,
-  }
-
   let groupedByTeam = {
     Teen: [] as team[],
     Man: [] as team[],
@@ -325,7 +325,6 @@ const createWindow = (): void => {
     if (!comp) return false;
 
     let [IndividualScores, TeamsScores] = await Promise.all([generateIndividualScores(comp), generateTeamsScores(comp)])
-    console.log(TeamsScores)
     if(comp.finalId) json.finals.splice(json.finals.findIndex(x => x.id == comp.finalId), 1, {id:comp.finalId, scores:{individual: IndividualScores, teams:TeamsScores}, name: comp.name})
     else {
       let finalId = uuidv4()

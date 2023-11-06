@@ -2,7 +2,7 @@ import {
   FilePdfOutlined,
   HomeOutlined,
   PrinterOutlined,
-  SettingOutlined
+  SettingOutlined,
 } from "@ant-design/icons";
 import {
   Breadcrumb,
@@ -10,43 +10,32 @@ import {
   FloatButton,
   Select,
   Table,
-  Tooltip
+  Tooltip,
 } from "antd";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
-import { summary } from "../";
+import { summary, team } from "../";
 import { Categories } from "../enums";
 import { KeysOfType } from "../HelperTypes";
+import {
+  finalsWithScores,
+  generateIndividualMergedFinals,
+  generateTeamsMergedFinals,
+  mergedFinals,
+  score,
+} from "../utils";
 
 const { ipcRenderer } = window.require("electron");
 
 const { Column, ColumnGroup } = Table;
 
-type final = {
-  category: string;
-  club: string;
-  girl: boolean;
-  name: string;
-  team: string;
-};
-
-type score = {
-  key: string;
-  place: number;
-  score3: number;
-  score5: number;
-  // score7: number;
-  // score9: number;
-};
-
-type mergedFinals = final & { scores: score[] };
-type finalsWithScores = final & score;
-
 const Summary = () => {
   const summaryData = useLoaderData() as summary;
   const navigate = useNavigate();
   const [finals, setFinals] = useState<mergedFinals[]>([]);
+  const [type, setType] = useState<"Individual" | "Teams">("Individual");
   const [competitions, setCompetitions] = useState<string[]>([]);
+  const [rawData, setRawData] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] =
     useState<keyof typeof Categories>("Kadet");
 
@@ -57,139 +46,31 @@ const Summary = () => {
     );
     let width = (window.outerWidth - 5 * 100) / competitions.length;
     columnGroups.forEach((x) => (x.style.width = `${width}px`));
-  }, [competitions]); 
+  }, [competitions]);
 
   useEffect(() => {
     (async () => {
-      const localFinals: { name: string; scores: {individual: finalsWithScores[]} }[] =
-        await ipcRenderer.invoke("getFinalsById", summaryData.compIds);
-        setCompetitions(localFinals.map((x) => x.name));
-        setFinals(mergeFinals(localFinals) || []);
+      const localFinals: {
+        name: string;
+        scores: { individual: finalsWithScores[]; teams: team[] };
+      }[] = await ipcRenderer.invoke("getFinalsById", summaryData.compIds);
+      setRawData(localFinals);
+      setCompetitions(localFinals.map((x) => x.name));
+      setFinals(mergeFinals(localFinals) || []);
     })();
   }, []);
 
+  useEffect(() => {
+    setFinals(mergeFinals(rawData) || []);
+  }, [type]);
+
   const mergeFinals = (
-    finals: { name: string; scores: {individual: finalsWithScores[]} }[]
+    finals: {
+      name: string;
+      scores: { individual: finalsWithScores[]; teams: team[] };
+    }[]
   ) => {
-    let mergedFinals: mergedFinals[] = [];
-    let categoryCounts: { [K in keyof typeof Categories]: number } = {
-      Kadet: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores.individual),
-        Categories.Kadet
-      ),
-      Junior: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores.individual),
-        Categories.Junior
-      ),
-      Juniorka: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores.individual),
-        Categories.Juniorka
-      ),
-      Kobieta: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores.individual),
-        Categories.Kobieta
-      ),
-      Senior: getMaxCountOfCompetetorsIn(
-        finals.map((x) => x.scores.individual),
-        Categories.Senior
-      ),
-    };
-    for (let i = 0; i < finals.length; i++) {
-      const final = finals[i];
-      for (let j = 0; j < final.scores.individual.length; j++) {
-        const competetor = final.scores.individual[j];
-        let indexInList = CompetetorsIndexInList(mergedFinals, competetor);
-        if (indexInList < 0)
-          mergedFinals.push({
-            ...competetor,
-            scores: [
-              {
-                key: final.name,
-                place: competetor.place,
-                score3: competetor.score3,
-                score5: competetor.score5,
-                // score7: competetor.score7,
-                // score9: competetor.score9,
-              },
-            ],
-          });
-        else
-          mergedFinals[indexInList].scores.push({
-            key: final.name,
-            place: competetor.place,
-            score3: competetor.score3,
-            score5: competetor.score5,
-            // score7: competetor.score7,
-            // score9: competetor.score9,
-          });
-      }
-      for (let j = 0; j < mergedFinals.length; j++) {
-        const competetor = mergedFinals[j];
-        if (competetor.scores.length < i + 1) {
-          let missingCompetitions = getMissingCompetitions(
-            finals.map((x) => x.name),
-            competetor.scores.map((x) => x.key)
-          );
-          missingCompetitions.forEach((name) => {
-            if (competetor.scores.length == i + 1) return;
-            competetor.scores.push({
-              key: name,
-              place:
-                categoryCounts[competetor.category as keyof typeof Categories],
-              score3: 0,
-              score5: 0,
-              // score7: 0,
-              // score9: 0,
-            });
-          });
-        }
-      }
-    }
-    return mergedFinals;
-  };
-
-  const getMissingCompetitions = (
-    listOfAllCompetitions: string[],
-    listOfCompetetorsCompetitions: string[]
-  ): string[] => {
-    return listOfAllCompetitions.filter(
-      (x) => !listOfCompetetorsCompetitions.includes(x)
-    );
-  };
-
-  const getMaxCountOfCompetetorsIn = (
-    list: finalsWithScores[][],
-    category: Categories
-  ) => {
-    let max = Math.max(
-      ...list.map((x) => x.filter((x) => x.category == category).length)
-    );
-    return max + 1;
-  };
-
-  const CompetetorsIndexInList = (list: mergedFinals[], competetor: final) => {
-    let [firstName, secondName] = competetor.name.trim().split(" ") as [
-      string,
-      string
-    ];
-    return list.findIndex((x) => {
-      let [existingFirstName, existingSecondName] = x.name.split(" ") as [
-        string,
-        string
-      ];
-      return (
-        compareToStrings(firstName, existingFirstName) &&
-        compareToStrings(secondName, existingSecondName) && x.category == competetor.category
-      );
-    });
-  };
-
-  const compareToStrings = (a: string, b: string): boolean => {
-    let missMatchedCharacters = 0;
-    for (let i = 0; i < Math.max(a.length, b.length); i++) {
-      if (a[i] != b[i]) missMatchedCharacters += 1;
-    }
-    return missMatchedCharacters <= 1;
+    return type == "Individual" ? generateIndividualMergedFinals(finals) : generateTeamsMergedFinals(finals);
   };
 
   const handleCategoryChange = (category: keyof typeof Categories) => {
@@ -217,9 +98,7 @@ const Summary = () => {
   }, []);
 
   const sortByScores = useCallback((a: mergedFinals, b: mergedFinals) => {
-    let getTotalScore = SumByProperty(
-      ScoreForCategory()
-    );
+    let getTotalScore = SumByProperty(ScoreForCategory());
     return getTotalScore(b.scores) - getTotalScore(a.scores);
   }, []);
 
@@ -246,22 +125,30 @@ const Summary = () => {
         .sort(sortByScores)
         .sort(sortByPlaces)
         .map((x: mergedFinals, place: number) => {
-          return { ...x, key: place + 1 , totalPlace:SumByProperty("place")(x.scores), totalScore:SumByProperty(ScoreForCategory())(x.scores) };
+          return {
+            ...x,
+            key: place + 1,
+            totalPlace: SumByProperty("place")(x.scores),
+            totalScore: SumByProperty(ScoreForCategory())(x.scores),
+          };
         });
       navigate(`/summaryPrint`, {
-        state: { summaryData, finals: localFinals, action, competitions},
+        state: { summaryData, finals: localFinals, action, competitions },
       });
     },
     [finals, competitions, summaryData]
   );
 
-  const filterByCategory = useCallback((comp: mergedFinals)=>{
-    return comp.category === selectedCategory
-  },[selectedCategory])
+  const filterByCategory = useCallback(
+    (comp: mergedFinals) => {
+      return comp.category === selectedCategory;
+    },
+    [selectedCategory]
+  );
 
   const ScoreForCategory = () => {
-    return selectedCategory === "Kadet" ? "score3" : "score5"
-  }
+    return selectedCategory === "Kadet" ? "score3" : "score5";
+  };
 
   return (
     <>
@@ -294,6 +181,24 @@ const Summary = () => {
           value={selectedCategory}
           options={[...createCategories()]}
         />
+        <Select
+          style={{ width: 120, marginLeft: 16 }}
+          onChange={(value: any) => {
+            // props.setType(value);
+            setType(value);
+          }}
+          value={type}
+          options={[
+            {
+              label: "Indywidualnie",
+              value: "Individual",
+            },
+            {
+              label: "Drużyny",
+              value: "Teams",
+            },
+          ]}
+        />
       </div>
       <ConfigProvider
         theme={{
@@ -316,7 +221,10 @@ const Summary = () => {
             />
           </Tooltip>
           <Tooltip title="Wydrukuj">
-            <FloatButton icon={<PrinterOutlined />} onClick={() => PrintOrExportSummary('printResults')} />
+            <FloatButton
+              icon={<PrinterOutlined />}
+              onClick={() => PrintOrExportSummary("printResults")}
+            />
           </Tooltip>
         </FloatButton.Group>
       </ConfigProvider>
@@ -330,17 +238,19 @@ const Summary = () => {
           })}
         key="table"
       >
-        <Column title="Miejsce" dataIndex="key" key="place" align="center"/>
+        <Column title="Miejsce" dataIndex="key" key="place" align="center" />
         <Column
-          title="Imię i nazwisko"
+          title={type == "Individual" ? "Imię i nazwisko" : "Skład"}
           dataIndex="name"
           key="name"
           align="center"
         />
-        <Column title="Okręg/Klub" dataIndex="club" key="club" align="center" />
+        <Column title={type == "Individual" ? "Okręg/Klub" : "Drużyna"} dataIndex="club" key="club" align="center" />
         {competitions.map((name, i) => (
           <ColumnGroup
-            className={`summaryColumnGroup ${i % 2 == 0 ? 'summaryBackgroundChange' : ''}`}
+            className={`summaryColumnGroup ${
+              i % 2 == 0 ? "summaryBackgroundChange" : ""
+            }`}
             title={<span style={{ fontSize: "12px" }}>{name}</span>}
             align="center"
             key={name}
@@ -349,7 +259,9 @@ const Summary = () => {
               title="Miejsce"
               key={"place"}
               align="center"
-              className={`summaryColumn left ${i % 2 == 0 ? 'summaryBackgroundChange' : ''}`}
+              className={`summaryColumn left ${
+                i % 2 == 0 ? "summaryBackgroundChange" : ""
+              }`}
               render={(val: mergedFinals) => (
                 <span style={{ fontWeight: 700 }}>
                   {FindByCompetitionName(val.scores, name, "place")}
@@ -360,14 +272,12 @@ const Summary = () => {
               title="Punkty"
               key={"score"}
               align="center"
-              className={`summaryColumn right ${i % 2 == 0 ? 'summaryBackgroundChange' : ''}`}
+              className={`summaryColumn right ${
+                i % 2 == 0 ? "summaryBackgroundChange" : ""
+              }`}
               render={(val: mergedFinals) => (
                 <span style={{ fontWeight: 700 }}>
-                  {FindByCompetitionName(
-                    val.scores,
-                    name,
-                    ScoreForCategory()
-                  )}
+                  {FindByCompetitionName(val.scores, name, ScoreForCategory())}
                 </span>
               )}
             />
@@ -378,9 +288,7 @@ const Summary = () => {
           key="totalScore"
           align="center"
           render={(val: mergedFinals) =>
-            SumByProperty(ScoreForCategory())(
-              val.scores
-            ).toFixed(2)
+            SumByProperty(ScoreForCategory())(val.scores).toFixed(2)
           }
         />
         <Column

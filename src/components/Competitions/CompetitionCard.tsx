@@ -1,9 +1,14 @@
-import { CheckCircleFilled, DeleteOutlined, MoreOutlined, PlusCircleOutlined } from "@ant-design/icons";
+import {
+  CheckCircleFilled,
+  DeleteOutlined,
+  MoreOutlined,
+  PlusCircleOutlined,
+} from "@ant-design/icons";
 import { mergeStyleSets } from "@fluentui/merge-styles";
 import { Avatar, Button, Dropdown, Tooltip } from "antd";
 import Paragraph from "antd/es/typography/Paragraph";
 
-const {ipcRenderer} = window.require('electron')
+const { ipcRenderer } = window.require("electron");
 
 const classNames = mergeStyleSets({
   content: {
@@ -36,7 +41,18 @@ const classNames = mergeStyleSets({
 const CompetitionCard = (props: IProps) => {
   return (
     <div className={classNames.box}>
-      {props.summaryGenerated ? <Tooltip title="Wygenerowano wyniki końcowe"><CheckCircleFilled style={{position:'absolute', left:'15px', top:'15px', color:'green'}}/></Tooltip> : null}
+      {props.summaryGenerated ? (
+        <Tooltip title="Wygenerowano wyniki końcowe">
+          <CheckCircleFilled
+            style={{
+              position: "absolute",
+              left: "15px",
+              top: "15px",
+              color: "green",
+            }}
+          />
+        </Tooltip>
+      ) : null}
       <div className={classNames.content}>
         {!props.addNewCard ? (
           <Dropdown
@@ -44,11 +60,7 @@ const CompetitionCard = (props: IProps) => {
               items: [
                 {
                   key: "1",
-                  label: (
-                    <span onClick={() => props.editComp()}>
-                      Edytuj
-                    </span>
-                  ),
+                  label: <span onClick={() => props.editComp()}>Edytuj</span>,
                 },
                 {
                   key: "2",
@@ -60,14 +72,14 @@ const CompetitionCard = (props: IProps) => {
                   ),
                 },
                 {
-                  type:'divider'
+                  type: "divider",
                 },
                 {
                   key: "3",
-                  danger:true,
+                  danger: true,
                   label: (
-                    <span onClick={() =>  props.deleteComp()}>
-                      <DeleteOutlined style={{marginRight:'5px'}}/>
+                    <span onClick={() => props.deleteComp()}>
+                      <DeleteOutlined style={{ marginRight: "5px" }} />
                       Usuń
                     </span>
                   ),
@@ -102,7 +114,13 @@ const CompetitionCard = (props: IProps) => {
             }}
           >
             <PlusCircleOutlined className={classNames.icon} />
-            <span style={{ fontSize: "1.2rem", color: "var(--secondary)" }}>
+            <span
+              style={{
+                fontSize: "1.2rem",
+                color: "var(--secondary)",
+                textAlign: "center",
+              }}
+            >
               Dodaj nowe zawody
             </span>
           </div>
@@ -122,16 +140,17 @@ const CompetitionCard = (props: IProps) => {
               src={props.competition.logo}
               size={100}
             />
-            <h4
+            <h5
               style={{
+                maxHeight: "70px",
                 marginBlock: "10px 5px",
                 textAlign: "center",
-                maxWidth: "100%",
+                maxWidth: "90%",
                 wordBreak: "break-word",
               }}
             >
               {props.competition.name}
-            </h4>
+            </h5>
             <Paragraph style={{ marginTop: "auto" }}>
               {props.competition.date}
             </Paragraph>
@@ -142,12 +161,17 @@ const CompetitionCard = (props: IProps) => {
   );
 };
 interface IProps {
-  competition?: { name: string; logo: string; date: string, generated:boolean };
+  competition?: {
+    name: string;
+    logo: string;
+    date: string;
+    generated: boolean;
+  };
   addNewCard?: boolean;
   onClick: () => void;
-  deleteComp?: () => void
-  editComp?: () => void
-  generateFinalResults?: () => void
-  summaryGenerated?:boolean
+  deleteComp?: () => void;
+  editComp?: () => void;
+  generateFinalResults?: () => void;
+  summaryGenerated?: boolean;
 }
 export default CompetitionCard;
