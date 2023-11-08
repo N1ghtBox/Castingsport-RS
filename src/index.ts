@@ -177,7 +177,7 @@ const generateTeamsScores = async (comp:comp):Promise<any[]> => {
 
   Object.keys(groupedByTeam).forEach((category: keyof typeof groupedByTeam) => {
     groupedByTeam[category] = groupedByTeam[category].sort((a,b) => b.score - a.score).map((team, i) => {
-      return {...team, place: i + 1}
+      return {...team, score:parseFloat(team.score.toFixed(3)), place: i + 1}
     })
   })
 

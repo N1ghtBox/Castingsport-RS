@@ -21,6 +21,9 @@ export type score = {
 };
 
 export type mergedFinals = final & { scores: score[] };
+export type mergedFinalsTeams = Omit<final, "club" | "girl" | "team"> & {
+  scores: score[];
+};
 export type finalsWithScores = final & score;
 
 export const getTotalScoreT3 = (a: any) => {
@@ -156,36 +159,115 @@ export const getMessageProps = (
 };
 
 export const generateTeamsMergedFinals = (
-    finals: { name: string; scores: { teams: team[] } }[]
-  ) => {
-    return [] as any[]
+  finals: { name: string; scores: { teams: team[] } }[]
+) => {
+  console.log(finals)
+  let mergedFinalsTeams: mergedFinalsTeams[] = [];
+  //Dont kill me for polish signs :((
+  let teamsCount: { [K in keyof typeof Teams]: number } = {
+    Młodzieżowa: getMaxCountOfCompetetorsIn({
+      type: "Team",
+      list: finals.map((x) => x.scores.teams),
+      team: Teams.Młodzieżowa,
+    }),
+    Seniorów: getMaxCountOfCompetetorsIn({
+      type: "Team",
+      list: finals.map((x) => x.scores.teams),
+      team: Teams.Seniorów,
+    }),
+    Kobiet: getMaxCountOfCompetetorsIn({
+      type: "Team",
+      list: finals.map((x) => x.scores.teams),
+      team: Teams.Kobiet,
+    }),
+    Indywidualnie: 0,
+  };
+
+  for (let i = 0; i < finals.length; i++) {
+    const final = finals[i];
+    for (let j = 0; j < final.scores.teams.length; j++) {
+      const team = final.scores.teams[j];
+      let indexInList = TeamsIndexInList(mergedFinalsTeams, team);
+      if (indexInList < 0)
+        mergedFinalsTeams.push({
+          ...team,
+          scores: [
+            {
+              key: final.name,
+              place: team.place,
+              score3: team.score,
+              score5: team.score,
+              // score7: competetor.score7,
+              // score9: competetor.score9,
+            },
+          ],
+        });
+      else {
+        mergedFinalsTeams[indexInList].scores.push({
+          key: final.name,
+          place: team.place,
+          score3: team.score,
+          score5: team.score,
+          // score7: competetor.score7,
+          // score9: competetor.score9,
+        });
+      }
+    }
   }
+
+  for (let j = 0; j < mergedFinalsTeams.length; j++) {
+    const team = mergedFinalsTeams[j];
+    const currentComps = team.scores.map((x) => x.key);
+    let allComps = finals.map((x) => x.name)
+    let missingCompetitions = allComps.filter(x => !currentComps.includes(x));
+    for (let i = 0; i < missingCompetitions.length; i++) {
+      const element = missingCompetitions[i];
+      team.scores.push({
+        key: element,
+        place:
+          teamsCount[team.category as keyof typeof Teams],
+        score3: 0,
+        score5: 0,
+      })
+    }
+  }
+
+  console.log(mergedFinalsTeams);
+
+  return mapToMergedFinals(mergedFinalsTeams);
+};
 
 export const generateIndividualMergedFinals = (
   finals: { name: string; scores: { individual: finalsWithScores[] } }[]
 ) => {
   let mergedFinals: mergedFinals[] = [];
+
   let categoryCounts: { [K in keyof typeof Categories]: number } = {
-    Kadet: getMaxCountOfCompetetorsIn(
-      finals.map((x) => x.scores.individual),
-      Categories.Kadet
-    ),
-    Junior: getMaxCountOfCompetetorsIn(
-      finals.map((x) => x.scores.individual),
-      Categories.Junior
-    ),
-    Juniorka: getMaxCountOfCompetetorsIn(
-      finals.map((x) => x.scores.individual),
-      Categories.Juniorka
-    ),
-    Kobieta: getMaxCountOfCompetetorsIn(
-      finals.map((x) => x.scores.individual),
-      Categories.Kobieta
-    ),
-    Senior: getMaxCountOfCompetetorsIn(
-      finals.map((x) => x.scores.individual),
-      Categories.Senior
-    ),
+    Kadet: getMaxCountOfCompetetorsIn({
+      type: "Individual",
+      list: finals.map((x) => x.scores.individual),
+      category: Categories.Kadet,
+    }),
+    Junior: getMaxCountOfCompetetorsIn({
+      type: "Individual",
+      list: finals.map((x) => x.scores.individual),
+      category: Categories.Kadet,
+    }),
+    Juniorka: getMaxCountOfCompetetorsIn({
+      type: "Individual",
+      list: finals.map((x) => x.scores.individual),
+      category: Categories.Kadet,
+    }),
+    Kobieta: getMaxCountOfCompetetorsIn({
+      type: "Individual",
+      list: finals.map((x) => x.scores.individual),
+      category: Categories.Kadet,
+    }),
+    Senior: getMaxCountOfCompetetorsIn({
+      type: "Individual",
+      list: finals.map((x) => x.scores.individual),
+      category: Categories.Kadet,
+    }),
   };
   for (let i = 0; i < finals.length; i++) {
     const final = finals[i];
@@ -238,43 +320,51 @@ export const generateIndividualMergedFinals = (
       }
     }
   }
-  return mergedFinals
+  return mergedFinals;
 };
 
 const getMaxCountOfCompetetorsIn = (
-  list: finalsWithScores[][],
-  category: Categories
+  params:
+    | {
+        type: "Individual";
+        list: finalsWithScores[][];
+        category: Categories;
+      }
+    | {
+        type: "Team";
+        list: team[][];
+        team: Teams;
+      }
 ) => {
-  let max = Math.max(
-    ...list.map((x) => x.filter((x) => x.category == category).length)
-  );
+  let max = 0;
+  if (params.type == "Individual")
+    max = Math.max(
+      ...params.list.map(
+        (x) => x.filter((x) => x.category == params.category).length
+      )
+    );
+  if (params.type == "Team")
+    max = Math.max(
+      ...params.list.map(
+        (x) => x.filter((x) => x.category == params.team).length
+      )
+    );
   return max + 1;
 };
 
-const CompetetorsIndexInList = (list: mergedFinals[], competetor: final) => {
-  let [firstName, secondName] = competetor.name.trim().split(" ") as [
-    string,
-    string
-  ];
-  return list.findIndex((x) => {
-    let [existingFirstName, existingSecondName] = x.name.split(" ") as [
-      string,
-      string
-    ];
-    return (
-      compareToStrings(firstName, existingFirstName) &&
-      compareToStrings(secondName, existingSecondName) &&
-      x.category == competetor.category
-    );
-  });
+const TeamsIndexInList = (list: mergedFinalsTeams[], team: team) => {
+  return list.findIndex(
+    (x) =>
+      compareWithTolerance(x.name, team.name, 4) && x.category == team.category
+  );
 };
 
-const compareToStrings = (a: string, b: string): boolean => {
-  let missMatchedCharacters = 0;
-  for (let i = 0; i < Math.max(a.length, b.length); i++) {
-    if (a[i] != b[i]) missMatchedCharacters += 1;
-  }
-  return missMatchedCharacters <= 1;
+const CompetetorsIndexInList = (list: mergedFinals[], competetor: final) => {
+  return list.findIndex(
+    (x) =>
+      compareWithTolerance(x.name, competetor.name, 3) &&
+      x.category == competetor.category
+  );
 };
 
 const getMissingCompetitions = (
@@ -285,3 +375,53 @@ const getMissingCompetitions = (
     (x) => !listOfCompetetorsCompetitions.includes(x)
   );
 };
+
+const mapToMergedFinals = (
+  mergedFinalsTeams: mergedFinalsTeams[]
+): mergedFinals[] => {
+  return mergedFinalsTeams.map((x) => {
+    return {
+      category: x.category,
+      club: x.category,
+      girl: false,
+      name: x.name,
+      team: x.name,
+      scores: x.scores,
+    };
+  });
+};
+
+function levenshteinDistance(s1: string, s2: string) {
+  if (s1.length === 0) return s2.length;
+  if (s2.length === 0) return s1.length;
+
+  const matrix = Array.from(Array(s1.length + 1), () =>
+    Array(s2.length + 1).fill(0)
+  );
+
+  for (let i = 0; i <= s1.length; i++) {
+    matrix[i][0] = i;
+  }
+
+  for (let j = 0; j <= s2.length; j++) {
+    matrix[0][j] = j;
+  }
+
+  for (let i = 1; i <= s1.length; i++) {
+    for (let j = 1; j <= s2.length; j++) {
+      const cost = s1[i - 1] === s2[j - 1] ? 0 : 1;
+      matrix[i][j] = Math.min(
+        matrix[i - 1][j] + 1,
+        matrix[i][j - 1] + 1,
+        matrix[i - 1][j - 1] + cost
+      );
+    }
+  }
+
+  return matrix[s1.length][s2.length];
+}
+
+function compareWithTolerance(s1: string, s2: string, tolerance: number) {
+  const distance = levenshteinDistance(s1.trim(), s2.trim());
+  return distance <= tolerance;
+}

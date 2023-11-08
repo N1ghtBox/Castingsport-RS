@@ -70,7 +70,9 @@ const Summary = () => {
       scores: { individual: finalsWithScores[]; teams: team[] };
     }[]
   ) => {
-    return type == "Individual" ? generateIndividualMergedFinals(finals) : generateTeamsMergedFinals(finals);
+    return type == "Individual"
+      ? generateIndividualMergedFinals(finals)
+      : generateTeamsMergedFinals(finals);
   };
 
   const handleCategoryChange = (category: keyof typeof Categories) => {
@@ -115,7 +117,7 @@ const Summary = () => {
     ) => {
       return scores.find((x) => x.key == compName)[property];
     },
-    []
+    [finals, type]
   );
 
   const PrintOrExportSummary = useCallback(
@@ -141,12 +143,14 @@ const Summary = () => {
 
   const filterByCategory = useCallback(
     (comp: mergedFinals) => {
+      if (type === "Teams") return true;
       return comp.category === selectedCategory;
     },
-    [selectedCategory]
+    [selectedCategory, type]
   );
 
   const ScoreForCategory = () => {
+    if (type === "Teams") return "score5";
     return selectedCategory === "Kadet" ? "score3" : "score5";
   };
 
@@ -239,13 +243,20 @@ const Summary = () => {
         key="table"
       >
         <Column title="Miejsce" dataIndex="key" key="place" align="center" />
+        {type == "Individual" ? (
+          <Column
+            title={"Imię i nazwisko"}
+            dataIndex="name"
+            key="name"
+            align="center"
+          />
+        ) : null}
         <Column
-          title={type == "Individual" ? "Imię i nazwisko" : "Skład"}
-          dataIndex="name"
-          key="name"
+          title={type == "Individual" ? "Okręg/Klub" : "Drużyna"}
+          dataIndex="club"
+          key="club"
           align="center"
         />
-        <Column title={type == "Individual" ? "Okręg/Klub" : "Drużyna"} dataIndex="club" key="club" align="center" />
         {competitions.map((name, i) => (
           <ColumnGroup
             className={`summaryColumnGroup ${
@@ -284,7 +295,7 @@ const Summary = () => {
           </ColumnGroup>
         ))}
         <Column
-          title="Łączna ilość punktów"
+          title="Łączny wynik"
           key="totalScore"
           align="center"
           render={(val: mergedFinals) =>
