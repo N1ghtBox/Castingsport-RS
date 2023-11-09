@@ -1,7 +1,7 @@
 import { ArgsProps } from "antd/es/message";
 import { Categories, Teams } from "./enums";
 import DataType from "./interfaces/dataType";
-import { team } from ".";
+import { team } from "./IpcMainMaker";
 
 export type final = {
   category: string;
