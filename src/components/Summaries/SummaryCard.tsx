@@ -86,7 +86,7 @@ const SummaryCard = (props: IProps) => {
             }}
           >
             <PlusCircleOutlined className={classNames.icon} />
-            <span style={{ fontSize: "1.2rem", color: "var(--secondary)" }}>
+            <span style={{ fontSize: "1.2rem", color: "var(--secondary)", textAlign:'center' }}>
               Dodaj nowy cykl
             </span>
           </div>

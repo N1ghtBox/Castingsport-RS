@@ -421,7 +421,7 @@ function levenshteinDistance(s1: string, s2: string) {
   return matrix[s1.length][s2.length];
 }
 
-function compareWithTolerance(s1: string, s2: string, tolerance: number) {
+export function compareWithTolerance(s1: string, s2: string, tolerance: number) {
   const distance = levenshteinDistance(s1.trim(), s2.trim());
   return distance <= tolerance;
 }

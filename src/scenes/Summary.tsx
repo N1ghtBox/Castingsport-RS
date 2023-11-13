@@ -14,8 +14,8 @@ import {
 } from "antd";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useLoaderData, useNavigate } from "react-router-dom";
-import { summary, team } from "../";
-import { Categories } from "../enums";
+import { summary, team } from "../IpcMainMaker";
+import { Categories, Teams } from "../enums";
 import { KeysOfType } from "../HelperTypes";
 import {
   finalsWithScores,
@@ -38,7 +38,8 @@ const Summary = () => {
   const [rawData, setRawData] = useState<any[]>([]);
   const [selectedCategory, setSelectedCategory] =
     useState<keyof typeof Categories>("Kadet");
-
+  const [selectedCategoryTeams, setSelectedCategoryTeams] =
+    useState<keyof typeof Teams>("Młodzieżowa");
   useEffect(() => {
     if (!competitions) return;
     const columnGroups = document.querySelectorAll<HTMLDivElement>(
@@ -70,26 +71,39 @@ const Summary = () => {
       scores: { individual: finalsWithScores[]; teams: team[] };
     }[]
   ) => {
-    return type == "Individual"
+    return IsShowingIndividual()
       ? generateIndividualMergedFinals(finals)
       : generateTeamsMergedFinals(finals);
   };
 
-  const handleCategoryChange = (category: keyof typeof Categories) => {
-    setSelectedCategory(category);
+  const handleCategoryChange = (
+    category: keyof typeof Categories | keyof typeof Teams
+  ) => {
+    if (Object.keys(Categories).includes(category))
+      setSelectedCategory(category as keyof typeof Categories);
+    else setSelectedCategoryTeams(category as keyof typeof Teams);
   };
 
   const createCategories = () => {
-    let categories = [
-      ...Object.keys(Categories).map((key) => {
-        return {
-          label: key,
-          value: key,
-        };
-      }),
+    if (IsShowingIndividual())
+      return [
+        ...Object.keys(Categories).map((key) => {
+          return {
+            label: key,
+            value: key,
+          };
+        }),
+      ];
+    return [
+      ...Object.keys(Teams)
+        .filter((key) => key !== Teams.Indywidualnie)
+        .map((key) => {
+          return {
+            label: key,
+            value: key,
+          };
+        }),
     ];
-
-    return categories;
   };
 
   const SumByProperty = useCallback((propety: KeysOfType<score, number>) => {
@@ -143,15 +157,19 @@ const Summary = () => {
 
   const filterByCategory = useCallback(
     (comp: mergedFinals) => {
-      if (type === "Teams") return true;
+      if (type === "Teams") return comp.category == selectedCategoryTeams;
       return comp.category === selectedCategory;
     },
-    [selectedCategory, type]
+    [selectedCategory, selectedCategoryTeams, type]
   );
 
   const ScoreForCategory = () => {
     if (type === "Teams") return "score5";
     return selectedCategory === "Kadet" ? "score3" : "score5";
+  };
+
+  const IsShowingIndividual = () => {
+    return type == "Individual";
   };
 
   return (
@@ -182,7 +200,9 @@ const Summary = () => {
         <Select
           style={{ width: 120, marginLeft: 16 }}
           onChange={handleCategoryChange}
-          value={selectedCategory}
+          value={
+            IsShowingIndividual() ? selectedCategory : selectedCategoryTeams
+          }
           options={[...createCategories()]}
         />
         <Select
@@ -243,7 +263,7 @@ const Summary = () => {
         key="table"
       >
         <Column title="Miejsce" dataIndex="key" key="place" align="center" />
-        {type == "Individual" ? (
+        {IsShowingIndividual() ? (
           <Column
             title={"Imię i nazwisko"}
             dataIndex="name"
@@ -252,8 +272,8 @@ const Summary = () => {
           />
         ) : null}
         <Column
-          title={type == "Individual" ? "Okręg/Klub" : "Drużyna"}
-          dataIndex="club"
+          title={IsShowingIndividual() ? "Okręg/Klub" : "Drużyna"}
+          dataIndex={IsShowingIndividual() ? "club" : "name"}
           key="club"
           align="center"
         />

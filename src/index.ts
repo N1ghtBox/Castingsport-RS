@@ -3,11 +3,10 @@ import {
   autoUpdater,
   BrowserWindow,
   dialog,
-  ipcMain,
-  shell,
+  ipcMain
 } from "electron";
 import isDev from "electron-is-dev";
-import { readFile, readFileSync, writeFile, writeFileSync } from "jsonfile";
+import { readFileSync, writeFile, writeFileSync } from "jsonfile";
 import { Db, MongoClient } from "mongodb";
 import { writeFile as exportToPdf } from "original-fs";
 import { SetupIpcMain } from "./IpcMainMaker";
@@ -28,8 +27,6 @@ let mainWindow: BrowserWindow;
 const createWindow = async (database: Db): Promise<void> => {
   const server = "https://hazel-n1ghtbox.vercel.app";
   const url = `${server}/update/${process.platform}/${app.getVersion()}`;
-
-  // let teamsCollection = database.collection("Teams");
 
   autoUpdater.setFeedURL({ url });
 
@@ -76,7 +73,7 @@ const createWindow = async (database: Db): Promise<void> => {
   mainWindow.maximize();
   mainWindow.menuBarVisible = false;
 
-  SetupIpcMain(ipcMain);
+  SetupIpcMain(ipcMain,database);
 
   ipcMain.handle("exportToPdf", async (_: any, ...args: any[]) => {
     let path = dialog.showOpenDialogSync({

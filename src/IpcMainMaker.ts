@@ -1,15 +1,17 @@
-import { readFile, readFileSync, writeFile, writeFileSync } from "jsonfile";
-import isDev from "electron-is-dev";
 import { dialog, shell } from "electron";
+import isDev from "electron-is-dev";
+import { readFile, writeFile } from "jsonfile";
 import { Categories, Teams } from "./enums";
+import { Collection, Db, Document } from "mongodb";
 
 const filePath = isDev ? "./data.json" : "./../data.json";
 
-export const SetupIpcMain = (Ipc: Electron.IpcMain) => {
+export const SetupIpcMain = (Ipc: Electron.IpcMain, Database: Db) => {
   CompetitionsEndpoints(Ipc);
   SummaryEndpoints(Ipc);
   DevEndpoints(Ipc);
   MiscellaneousEndpoints(Ipc);
+  TeamsEndpoints(Ipc, Database.collection("Teams"));
 };
 
 const DevEndpoints = (Ipc: Electron.IpcMain) => {
@@ -267,6 +269,21 @@ const SummaryEndpoints = (Ipc: Electron.IpcMain) => {
     await writeFile(filePath, json);
 
     return json.competitions;
+  });
+};
+
+const TeamsEndpoints = (
+  Ipc: Electron.IpcMain,
+  TeamsCollection: Collection<Document>
+) => {
+  Ipc.handle("getTeams", async () => {
+    let teams = await TeamsCollection.find({}).toArray();
+    return teams;
+  });
+
+  Ipc.handle("createNewTeam", async (_: any, ...args:any[]) => {
+    await TeamsCollection.insertOne(args[0]);
+    return await TeamsCollection.find({}).toArray();
   });
 };
 

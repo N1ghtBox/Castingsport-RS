@@ -8,8 +8,6 @@ import { mergeStyleSets } from "@fluentui/merge-styles";
 import { Avatar, Button, Dropdown, Tooltip } from "antd";
 import Paragraph from "antd/es/typography/Paragraph";
 
-const { ipcRenderer } = window.require("electron");
-
 const classNames = mergeStyleSets({
   content: {
     width: "200px",

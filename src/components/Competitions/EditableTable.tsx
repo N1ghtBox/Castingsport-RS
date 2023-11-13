@@ -63,6 +63,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   const save = async (value?: any) => {
     try {
+      if(!value || typeof value == "object" || typeof value == "function") return toggleEdit()
       const values = await form.validateFields();
       if (value && dataIndex === "team") {
         values.team = value;
@@ -101,6 +102,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
             onBlur={save}
             onSelect={save}
             onDeselect={save}
+            autoFocus
             open
             options={Object.keys(Categories).map((key) => {
               return {
@@ -115,11 +117,38 @@ const EditableCell: React.FC<EditableCellProps> = ({
             onBlur={save}
             onSelect={save}
             onDeselect={save}
+            autoFocus
             open
-            options={Object.keys(Teams).map((key: any) => {
+            options={Object.keys(Teams).map((key: keyof typeof Teams) => {
               return {
-                label: Teams[key as keyof typeof Teams],
+                label: Teams[key],
                 value: key,
+              };
+            })}
+          />
+        ) : dataIndex === "club" ? (
+          <Select
+            style={{ width: 120 }}
+            dropdownStyle={{width:'fit-content'}}
+            onBlur={save}
+            onSelect={save}
+            onDeselect={save}
+            showSearch
+            notFoundContent={null}
+            open
+            onKeyUp={key => {
+              if(key.code == 'Enter'){
+                form.setFieldsValue({club:(key.target as HTMLInputElement).value})
+                save((key.target as HTMLInputElement).value)
+              }
+            }}
+            autoFocus
+            options={Object.values(
+              JSON.parse(localStorage.getItem("teams"))
+            ).map((x: any) => {
+              return {
+                label: x.name,
+                value: x.name,
               };
             })}
           />
@@ -152,7 +181,7 @@ type EditableTableProps = Parameters<typeof Table>[0];
 type ColumnTypes = Exclude<EditableTableProps["columns"], undefined>;
 
 const EditableTable = (props: IProps) => {
-  const [searchValue, setSearchValue] = useState('')
+  const [searchValue, setSearchValue] = useState("");
   const components = {
     body: {
       row: EditableRow,
@@ -213,9 +242,9 @@ const EditableTable = (props: IProps) => {
         />
         <Input.Search
           value={searchValue}
-          onChange={e => setSearchValue(e.target.value)} 
-          style={{width:'150px'}}
-          />
+          onChange={(e) => setSearchValue(e.target.value)}
+          style={{ width: "150px" }}
+        />
       </div>
 
       <Table
@@ -228,7 +257,9 @@ const EditableTable = (props: IProps) => {
           height: "calc(95vh - 22px)",
           whiteSpace: "pre",
         }}
-        dataSource={props.dataSource.filter(data => data.name.toLowerCase().includes(searchValue.toLocaleLowerCase()))}
+        dataSource={props.dataSource.filter((data) =>
+          data.name.toLowerCase().includes(searchValue.toLocaleLowerCase())
+        )}
         columns={columns as ColumnTypes}
       />
     </div>

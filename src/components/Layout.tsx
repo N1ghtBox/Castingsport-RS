@@ -1,5 +1,6 @@
 import {
   EditOutlined,
+  ExclamationCircleFilled,
   ExportOutlined,
   FilePdfOutlined,
   HomeOutlined,
@@ -12,19 +13,20 @@ import {
   Breadcrumb,
   ConfigProvider,
   FloatButton,
-  message,
-  notification,
+  Modal,
   Tabs,
   TabsProps,
   Tooltip,
+  message,
+  notification,
 } from "antd";
 import { Rule } from "antd/es/form";
 import { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import columns from "../columns";
 import { Categories, DisciplinesForCategories, Teams } from "../enums";
-import Competetors from "../interfaces/competetor";
 import ICompetition from "../interfaces/Competition";
+import Competetors from "../interfaces/competetor";
 import DataType from "../interfaces/dataType";
 import {
   checkIfTakesPart,
@@ -33,10 +35,12 @@ import {
   getMessageProps,
   getTotalScore,
 } from "../utils";
-import EditableTable from "./Competitions/EditableTable";
 import EditModal from "./Competitions/EditModal";
+import EditableTable from "./Competitions/EditableTable";
 import ResultsTable from "./Competitions/ResultsTable";
 import ScoreTable from "./Competitions/ScoreTable";
+
+const { confirm } = Modal;
 
 const { ipcRenderer } = window.require("electron");
 
@@ -108,7 +112,7 @@ const Layout = () => {
     date: "",
     mainJudge: "",
     secretaryJudge: "",
-    generatedFinals:false
+    generatedFinals: false,
   });
   const [currentColumns, setColumns] = useState<any[]>(columns.list.columns);
   const [competitionFilter, setCompetitionFilter] = useState<
@@ -138,7 +142,7 @@ const Layout = () => {
   useEffect(() => {
     if (state.key) onChange(state.key);
 
-    const fetchData = async ():Promise<string> => {
+    const fetchData = async (): Promise<string> => {
       const comp = await ipcRenderer.invoke("getById", state.id);
       setCompetitionInfo({
         id: comp.id,
@@ -147,28 +151,30 @@ const Layout = () => {
         date: comp.date,
         secretaryJudge: comp.secretaryJudge,
         mainJudge: comp.mainJudge,
-        generatedFinals: comp.summaryGenerated
+        generatedFinals: comp.summaryGenerated,
       });
       setDataSource([...comp.competetors]);
 
+      let teams = await ipcRenderer.invoke("getTeams");
+      localStorage.setItem("teams", JSON.stringify(teams));
+
       return comp.id;
-    }
+    };
 
-    let id = ""
+    let id = "";
 
-    fetchData()
-      .then(val => id = val)
+    fetchData().then((val) => (id = val));
 
-    let intervalId = setInterval(UpdateComp, 1000 * 60)
+    let intervalId = setInterval(UpdateComp, 1000 * 60);
 
-    return () => cleanUp(intervalId)
+    return () => cleanUp(intervalId);
   }, [state]);
 
-  const cleanUp = (timer:NodeJS.Timeout) => {
-    clearInterval(timer)
-  }
+  const cleanUp = (timer: NodeJS.Timeout) => {
+    clearInterval(timer);
+  };
 
-  const UpdateComp = async (removeEmpty:boolean = false) => {
+  const UpdateComp = async (removeEmpty: boolean = false) => {
     let localDatasource, localCompInfo: ICompetition;
     setCompetitionInfo((prev) => {
       localCompInfo = prev;
@@ -179,11 +185,15 @@ const Layout = () => {
       return prev;
     });
     messageApi.open(getMessageProps("loading", "Zapisywanie...", 3));
-    await ipcRenderer.invoke("saveCompetiton", {
-      name: localCompInfo.name,
-      id: localCompInfo.id,
-      competetors: localDatasource,
-    },removeEmpty);
+    await ipcRenderer.invoke(
+      "saveCompetiton",
+      {
+        name: localCompInfo.name,
+        id: localCompInfo.id,
+        competetors: localDatasource,
+      },
+      removeEmpty
+    );
     messageApi.destroy();
     messageApi.open(getMessageProps("success", "Zapisano", 2));
   };
@@ -243,9 +253,48 @@ const Layout = () => {
       return;
     }
 
+    let teams = JSON.parse(localStorage.getItem("teams")) as any[];
+    if (
+      item.club !== row.club &&
+      !teams.map((x) => x.name).includes(row.club)
+    ) {
+      confirm({
+        title: "Nowa drużyna",
+        icon: <ExclamationCircleFilled />,
+        okText: "Tak",
+        cancelText: "Nie",
+        content: (
+          <span>
+            `Czy napewno chcesz stworzyć drużynę <b>{row.club}</b>?`
+          </span>
+        ),
+        okButtonProps: { style: { background: "#d9363e" } },
+        onOk: async () => {
+          newData.splice(index, 1, {
+            ...item,
+            ...row,
+          });
+          localStorage.removeItem("teams");
+          let team = {
+            name: row.club,
+          };
+          let newTeams = await ipcRenderer.invoke("createNewTeam", team);
+          localStorage.setItem("teams", JSON.stringify(newTeams));
+
+          setDataSource(newData);
+        },
+        onCancel() {},
+      });
+      return;
+    }
+
     if (item.category !== row.category) {
       let set: number = DisciplinesForCategories[row.category as any] as any;
-      if(row.category === Categories.Kadet && row.name.split(" ")[0].at(-1) === 'a') item.girl = true;
+      if (
+        row.category === Categories.Kadet &&
+        row.name.split(" ")[0].at(-1) === "a"
+      )
+        item.girl = true;
       row.disciplines = Object.values(row.disciplines).map(
         (discipline: any, i: number) => {
           if (row.category === Categories.Kadet)
@@ -343,9 +392,7 @@ const Layout = () => {
     let data = await ipcRenderer.invoke("importList");
 
     let json = JSON.parse(data);
-    console.log(json);
     json.forEach((element: any) => {
-      console.log(element);
       handleAdd(element);
     });
   };
@@ -564,7 +611,11 @@ const Layout = () => {
             title: <HomeOutlined />,
             onClick: async () => {
               await UpdateComp(true);
-              if(competitionInfo.generatedFinals) await ipcRenderer.invoke("generateFinalResults", competitionInfo.id)
+              if (competitionInfo.generatedFinals)
+                await ipcRenderer.invoke(
+                  "generateFinalResults",
+                  competitionInfo.id
+                );
               navigate("/");
             },
           },
