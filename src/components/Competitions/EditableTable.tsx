@@ -1,7 +1,6 @@
 import { PlusOutlined } from "@ant-design/icons";
 import { Button, Checkbox, Form, Input, InputRef, Select, Table } from "antd";
 import type { FormInstance } from "antd/es/form";
-import Search from "antd/es/transfer/search";
 import React, { useContext, useEffect, useRef, useState } from "react";
 import { Categories, Teams } from "../../enums";
 import DataType from "../../interfaces/dataType";
@@ -63,7 +62,11 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   const save = async (value?: any) => {
     try {
-      if(!value || typeof value == "object" || typeof value == "function") return toggleEdit()
+      if(!value || typeof value == "function") return toggleEdit()
+      if(typeof value == "object" && (value.target as HTMLInputElement).value){
+        form.setFieldsValue({club:(value.target as HTMLInputElement).value})
+        value = (value.target as HTMLInputElement).value
+      }
       const values = await form.validateFields();
       if (value && dataIndex === "team") {
         values.team = value;
