@@ -118,8 +118,14 @@ const MiscellaneousEndpoints = (Ipc: Electron.IpcMain) => {
 const CompetitionsEndpoints = (Ipc: Electron.IpcMain) => {
   Ipc.handle("getCompetitions", async () => {
     let json: json = await readFile(filePath);
-    return json.competitions;
+    return json.competitions.map(comp => {
+      return {
+        ...comp,
+        year:parseInt(comp.date.replace(" r.", "").split(" ").at(-1))
+      }
+    });
   });
+
   Ipc.handle("importList", async (_: any, ...args: any[]) => {
     let path = dialog.showOpenDialogSync({
       filters: [{ name: "Plik JSON", extensions: ["json"] }],

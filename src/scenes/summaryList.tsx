@@ -76,7 +76,7 @@ const SummariesList = (props: IProps) => {
           marginInline: "auto",
           display: "grid",
           gap: "50px",
-          gridTemplateColumns: "repeat(5,1fr)",
+          gridTemplateColumns: "repeat(auto-fit, 195px)",
         }}
       >
         {contextHolder}

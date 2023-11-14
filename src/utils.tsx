@@ -251,22 +251,22 @@ export const generateIndividualMergedFinals = (
     Junior: getMaxCountOfCompetetorsIn({
       type: "Individual",
       list: finals.map((x) => x.scores.individual),
-      category: Categories.Kadet,
+      category: Categories.Junior,
     }),
     Juniorka: getMaxCountOfCompetetorsIn({
       type: "Individual",
       list: finals.map((x) => x.scores.individual),
-      category: Categories.Kadet,
+      category: Categories.Juniorka,
     }),
     Kobieta: getMaxCountOfCompetetorsIn({
       type: "Individual",
       list: finals.map((x) => x.scores.individual),
-      category: Categories.Kadet,
+      category: Categories.Kobieta,
     }),
     Senior: getMaxCountOfCompetetorsIn({
       type: "Individual",
       list: finals.map((x) => x.scores.individual),
-      category: Categories.Kadet,
+      category: Categories.Senior,
     }),
   };
   for (let i = 0; i < finals.length; i++) {

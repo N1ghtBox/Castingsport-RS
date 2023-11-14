@@ -62,7 +62,6 @@ const CompetitionCard = (props: IProps) => {
                 },
                 {
                   key: "2",
-                  // disabled:props.competition!.generated,
                   label: (
                     <span onClick={() => props.generateFinalResults()}>
                       Generuj wyniki końcowe

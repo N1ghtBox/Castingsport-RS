@@ -82,6 +82,7 @@ const Start = (props: IProps) => {
       try {
         let comp = await ipcRenderer.invoke("getCompetitions");
         messageApi.destroy("loading");
+        console.log(comp);
         setListOfCompetiton(comp);
         messageApi.open(
           getMessageProps("success", "Załadowano projekty", 1, "success")
@@ -226,9 +227,102 @@ const Start = (props: IProps) => {
   return (
     <>
       <MenuTop activeTab="competitions" />
-      <div
+      <Modal
+        centered
+        title={updateMode ? "Edycja zawodów" : "Utwórz nowe zawody"}
+        open={isModalOpen}
+        onOk={onOk}
+        okText={updateMode ? "Edytuj" : "Utwórz"}
+        cancelText={"Anuluj"}
+        okButtonProps={{ style: { background: "#d9363e" } }}
+        onCancel={onCancel}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            gap: "50px",
+          }}
+          className={classNames.removeWidth}
+        >
+          <div>
+            <Input
+              style={{ height: "40px", marginBottom: "15px" }}
+              placeholder="Wprowadź nazwę"
+              value={newCompName}
+              onChange={(e) => setNewCompName(e.target.value)}
+            />
+            <ConfigProvider locale={locale}>
+              <RangePicker
+                value={editDate}
+                onChange={(values: [Dayjs, Dayjs]) => {
+                  setDate(
+                    `${values[0].date()}-${values[1].date()} ${
+                      months[values[1].month()]
+                    } ${values[1].year()} r.`
+                  );
+                }}
+              />
+            </ConfigProvider>
+            <div style={{ display: "flex", gap: "15px", marginTop: "15px" }}>
+              <Input
+                style={{ height: "40px" }}
+                placeholder="Sędzia główny"
+                value={mainJudge}
+                onChange={(e) => setMainJudge(e.target.value)}
+              />
+              <Input
+                style={{ height: "40px" }}
+                placeholder="Sędzia sekretarz"
+                value={secretaryJudge}
+                onChange={(e) => setSecretaryJudge(e.target.value)}
+              />
+            </div>
+          </div>
+          <UploadPicture uploadPicture={(pic) => setLogo(pic)} image={logo} />
+        </div>
+      </Modal>
+      <Modal
+        centered
+        title="Dodaj licencje"
+        footer={[
+          <Button
+            key="okButton"
+            type="primary"
+            danger
+            onClick={async () => await saveLicense()}
+          >
+            Ok
+          </Button>,
+        ]}
+        closable={false}
+        open={isLicenseModalOpen.open}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexDirection: "column",
+          }}
+        >
+          <Input
+            status={isLicenseModalOpen.errorMessage ? "error" : ""}
+            style={{ height: "40px", marginBottom: "15px" }}
+            placeholder="Wprowadź licencje"
+            value={license}
+            onChange={(e) => setLicense(e.target.value)}
+          />
+          <span style={{ color: "red", width: "100%" }}>
+            {isLicenseModalOpen.errorMessage}
+          </span>
+        </div>
+      </Modal>
+      {contextHolder}
+      {/* <div
         style={{
-          minHeight:'80vh',
+          minHeight: "80vh",
           marginTop: "5vh",
           width: "calc(100vw - 100px)",
           marginInline: "auto",
@@ -237,117 +331,83 @@ const Start = (props: IProps) => {
           gridTemplateColumns: "repeat(auto-fit, 195px)",
         }}
       >
-        <Modal
-          centered
-          title={updateMode ? "Edycja zawodów" : "Utwórz nowe zawody"}
-          open={isModalOpen}
-          onOk={onOk}
-          okText={updateMode ? "Edytuj" : "Utwórz"}
-          cancelText={"Anuluj"}
-          okButtonProps={{ style: { background: "#d9363e" } }}
-          onCancel={onCancel}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: "50px",
-            }}
-            className={classNames.removeWidth}
-          >
-            <div>
-              <Input
-                style={{ height: "40px", marginBottom: "15px" }}
-                placeholder="Wprowadź nazwę"
-                value={newCompName}
-                onChange={(e) => setNewCompName(e.target.value)}
-              />
-              <ConfigProvider locale={locale}>
-                <RangePicker
-                  value={editDate}
-                  onChange={(values: [Dayjs, Dayjs]) => {
-                    setDate(
-                      `${values[0].date()}-${values[1].date()} ${
-                        months[values[1].month()]
-                      } ${values[1].year()} r.`
-                    );
-                  }}
-                />
-              </ConfigProvider>
-              <div style={{ display: "flex", gap: "15px", marginTop: "15px" }}>
-                <Input
-                  style={{ height: "40px" }}
-                  placeholder="Sędzia główny"
-                  value={mainJudge}
-                  onChange={(e) => setMainJudge(e.target.value)}
-                />
-                <Input
-                  style={{ height: "40px" }}
-                  placeholder="Sędzia sekretarz"
-                  value={secretaryJudge}
-                  onChange={(e) => setSecretaryJudge(e.target.value)}
-                />
-              </div>
-            </div>
-            <UploadPicture uploadPicture={(pic) => setLogo(pic)} image={logo} />
-          </div>
-        </Modal>
-        <Modal
-          centered
-          title="Dodaj licencje"
-          footer={[
-            <Button
-              key="okButton"
-              type="primary"
-              danger
-              onClick={async () => await saveLicense()}
-            >
-              Ok
-            </Button>,
-          ]}
-          closable={false}
-          open={isLicenseModalOpen.open}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              flexDirection: "column",
-            }}
-          >
-            <Input
-              status={isLicenseModalOpen.errorMessage ? "error" : ""}
-              style={{ height: "40px", marginBottom: "15px" }}
-              placeholder="Wprowadź licencje"
-              value={license}
-              onChange={(e) => setLicense(e.target.value)}
-            />
-            <span style={{ color: "red", width: "100%" }}>
-              {isLicenseModalOpen.errorMessage}
-            </span>
-          </div>
-        </Modal>
-        {contextHolder}
-        {listOfCompetition.map(
-          (value) => (
-            <CompetitionCard
-              key={value.id}
-              competition={value}
-              summaryGenerated={value.summaryGenerated}
-              onClick={() => openCompetition(value.id)}
-              generateFinalResults={async () => await generateFinals(value.id)}
-              deleteComp={async () => await deleteCompetiion(value.id)}
-              editComp={() => editComp(value)}
-            />
-          )
-        )}
+        {listOfCompetition.map((value) => (
+          <CompetitionCard
+            key={value.id}
+            competition={value}
+            summaryGenerated={value.summaryGenerated}
+            onClick={() => openCompetition(value.id)}
+            generateFinalResults={async () => await generateFinals(value.id)}
+            deleteComp={async () => await deleteCompetiion(value.id)}
+            editComp={() => editComp(value)}
+          />
+        ))}
         <CompetitionCard
           key={"addNew"}
           addNewCard
           onClick={() => setModalOpen(true)}
         />
+      </div> */}
+      <div
+        style={{
+          minHeight: "80vh",
+          marginTop: "5vh",
+          width: "calc(100vw - 100px)",
+          marginInline: "auto",
+          display: "flex",
+          flexDirection: "column",
+          gap: "50px",
+        }}
+      >
+        {[
+          ...new Set([
+            ...listOfCompetition.map((value) => value.year),
+            new Date().getFullYear(),
+          ]),
+        ].map((year: number) => (
+          <div
+            style={{
+              width: "calc(100% - 60px)",
+              backgroundColor: "#8080803d",
+              padding: "10px 30px 50px 30px",
+              borderRadius: "15px",
+            }}
+            key={year}
+          >
+            <h3>{year}</h3>
+            <div
+              style={{
+                display: "grid",
+                width: "100%",
+                gridTemplateColumns: "repeat(auto-fit, 195px)",
+                gap: "30px",
+              }}
+            >
+              {listOfCompetition
+                .filter((comp) => comp.year == year)
+                .map((value) => (
+                  <CompetitionCard
+                    key={value.id}
+                    competition={value}
+                    summaryGenerated={value.summaryGenerated}
+                    onClick={() => openCompetition(value.id)}
+                    generateFinalResults={async () =>
+                      await generateFinals(value.id)
+                    }
+                    deleteComp={async () => await deleteCompetiion(value.id)}
+                    editComp={() => editComp(value)}
+                  />
+                ))}
+              {year == new Date().getFullYear() ? (
+                <CompetitionCard
+                  key={"addNew"}
+                  addNewCard
+                  onClick={() => setModalOpen(true)}
+                />
+              ) : null}
+            </div>
+          </div>
+        ))}
       </div>
       <div
         style={{
