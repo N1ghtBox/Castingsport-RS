@@ -1,12 +1,9 @@
-import { Table } from "antd";
 import { Fragment, useCallback, useEffect } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { Categories } from "../enums";
-import { summary } from "../";
+import { summary } from "../IpcMainMaker";
 
 const { ipcRenderer } = window.require("electron");
-
-const { Column, ColumnGroup } = Table;
 
 type final = {
   category: string;

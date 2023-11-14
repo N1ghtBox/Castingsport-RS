@@ -102,6 +102,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
             onBlur={save}
             onSelect={save}
             onDeselect={save}
+            dropdownStyle={{width:'fit-content'}}
             autoFocus
             open
             options={Object.keys(Categories).map((key) => {
@@ -115,6 +116,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
           <Select
             style={{ width: 120 }}
             onBlur={save}
+            dropdownStyle={{width:'fit-content'}}
             onSelect={save}
             onDeselect={save}
             autoFocus
