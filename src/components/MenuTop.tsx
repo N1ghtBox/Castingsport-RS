@@ -1,7 +1,10 @@
 import { BarsOutlined, SettingOutlined, TrophyOutlined } from "@ant-design/icons";
 import type { MenuProps } from "antd";
 import { Menu } from "antd";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+
+const { ipcRenderer } = window.require("electron");
 
 const items: MenuProps["items"] = [
   {
@@ -22,11 +25,18 @@ const items: MenuProps["items"] = [
 ];
 
 const MenuTop = (props : IProps) => {
+  const [update,setUpdate] = useState(false)
   const navigate = useNavigate()
 
   const onClick: MenuProps["onClick"] = (e) => {
     navigate(`/${e.key}`)
   };
+
+  useEffect(()=>{
+    (async () => {
+      setUpdate(await ipcRenderer.invoke("IsUpdateAvailable"))
+    })();
+  },[])
 
   return (
     <Menu

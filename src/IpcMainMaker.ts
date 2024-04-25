@@ -1,8 +1,15 @@
 import { dialog, shell } from "electron";
 import isDev from "electron-is-dev";
 import { readFile, writeFile } from "jsonfile";
-import { Categories, Teams } from "./enums";
 import { Collection, Db, Document } from "mongodb";
+import xlsx from "node-xlsx";
+import {
+  Categories,
+  ParseStringToCategory,
+  ParseStringToTeam,
+  Teams,
+} from "./enums";
+import DataType from "./interfaces/dataType";
 
 const filePath = isDev ? "./data.json" : "./../data.json";
 
@@ -56,6 +63,85 @@ const MiscellaneousEndpoints = (Ipc: Electron.IpcMain) => {
       "https://www.linkedin.com/in/dawid-witczak-568591226/"
     );
     return;
+  });
+
+  Ipc.handle("importFromFile", async (_: any, competitionId: string) => {
+    let path = dialog.showOpenDialogSync({
+      filters: [{ name: "Excel", extensions: ["xlsx"] }],
+      properties: ["openFile"],
+    });
+
+    if (path.length == 0) {
+      console.warn("Did not choose any file");
+      return;
+    }
+
+    let workSheetsFromFile = xlsx.parse(path[0])[0].data;
+
+    let club = "";
+    let competetors: DataType[] = [];
+
+    let json: json = await readFile(filePath);
+
+    let competition = json.competitions.find((x) => x.id == competitionId);
+
+    if (competition == null) {
+      return;
+    }
+
+    let lastKey = Math.max(
+      ...competition.competetors.map((x) => parseInt(x.key.toString())),
+      0
+    );
+
+    for (let i = 0; i < workSheetsFromFile.length; i++) {
+      const row = workSheetsFromFile[i];
+      if (i == 7) {
+        club = row[2];
+      } else if (i >= 17 && i <= 29 && row[1]) {
+        let girl = row[4].toLowerCase() == "kadetka";
+
+        let disciplines: { [key: number]: boolean } = {
+          1: row[7] == "tak",
+          2: row[7] == "tak",
+          3: row[6] == "tak",
+          4: row[6] == "tak",
+          5: row[6] == "tak",
+          6: row[8] == "tak",
+          7: row[8] == "tak",
+          8: row[9] == "tak",
+          9: row[9] == "tak",
+        };
+
+        if(row[10].toLowerCase() == 'młodzieży'){
+          row[10] = 'Młodzieżowa'
+        }
+
+        competetors.push({
+          key: `${lastKey + competetors.length + 1}`,
+          disqualified: false,
+          name: row[1],
+          startingNumber: ``,
+          team: ParseStringToTeam(row[10]),
+          club: club,
+          disciplines: Array.from({ length: 9 }, (_: any, i: number) => {
+            return {
+              score: 0,
+              number: i + 1,
+              score2: 0,
+              time: "",
+              takesPart: disciplines[i + 1],
+            };
+          }),
+          girl: girl,
+          category: girl ? Categories.Kadet : ParseStringToCategory(row[4]),
+        });
+      }
+    }
+
+    competition.competetors = [...competition.competetors, ...competetors];
+
+    await writeFile(filePath, json);
   });
 
   Ipc.handle(
@@ -118,11 +204,11 @@ const MiscellaneousEndpoints = (Ipc: Electron.IpcMain) => {
 const CompetitionsEndpoints = (Ipc: Electron.IpcMain) => {
   Ipc.handle("getCompetitions", async () => {
     let json: json = await readFile(filePath);
-    return json.competitions.map(comp => {
+    return json.competitions.map((comp) => {
       return {
         ...comp,
-        year:parseInt(comp.date.replace(" r.", "").split(" ").at(-1))
-      }
+        year: parseInt(comp.date.replace(" r.", "").split(" ").at(-1)),
+      };
     });
   });
 
@@ -287,7 +373,7 @@ const TeamsEndpoints = (
     return teams;
   });
 
-  Ipc.handle("createNewTeam", async (_: any, ...args:any[]) => {
+  Ipc.handle("createNewTeam", async (_: any, ...args: any[]) => {
     await TeamsCollection.insertOne(args[0]);
     return await TeamsCollection.find({}).toArray();
   });
@@ -489,7 +575,7 @@ type comp = {
   logo: string;
   mainJudge: string;
   secretaryJudge: string;
-  competetors: any[];
+  competetors: DataType[];
 };
 
 export type summary = {

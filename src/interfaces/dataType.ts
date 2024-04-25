@@ -8,7 +8,7 @@ interface competition{
     time?:string,
 }
 
-interface DataType {
+type DataType = {
     key: React.Key;
     startingNumber: string;
     disqualified:boolean

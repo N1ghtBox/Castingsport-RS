@@ -1,7 +1,7 @@
 {
   "name": "castingsport-rs",
   "productName": "Castingsport-RS",
-  "version": "1.1.6",
+  "version": "1.1.7",
   "description": "Program do wyników castingsport",
   "main": ".webpack/main",
   "scripts": {
@@ -61,9 +61,11 @@
     "moment": "^2.29.4",
     "mongodb": "^6.2.0",
     "mongoose": "^8.0.0",
+    "node-xlsx": "^0.24.0",
     "path": "^0.12.7",
     "pdfkit": "^0.13.0",
     "react-router-dom": "^6.4.4",
+    "read-excel-file": "^5.7.1",
     "sort-by": "^1.2.0",
     "use-keyboard-shortcut": "^1.1.6"
   }

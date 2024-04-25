@@ -18,6 +18,8 @@ declare const MAIN_WINDOW_PRELOAD_WEBPACK_ENTRY: string;
 
 const filePath = isDev ? "./data.json" : "./../data.json";
 
+let update = false
+
 if (require("electron-squirrel-startup")) {
   app.quit();
 }
@@ -29,6 +31,12 @@ const createWindow = async (database: Db): Promise<void> => {
   const url = `${server}/update/${process.platform}/${app.getVersion()}`;
 
   autoUpdater.setFeedURL({ url });
+
+  autoUpdater.on("update-available", () => {
+    update = true
+  })
+
+  ipcMain.handle("IsUpdateAvailable", () => update)
 
   autoUpdater.on("update-downloaded", (event, releaseNotes, releaseName) => {
     const dialogOpts = {
@@ -43,10 +51,9 @@ const createWindow = async (database: Db): Promise<void> => {
       if (returnValue.response === 0) autoUpdater.quitAndInstall();
     });
   });
-
+  if (!isDev) autoUpdater.checkForUpdates();
   try {
     readFileSync(filePath);
-    if (!isDev) autoUpdater.checkForUpdates();
   } catch (ex) {
     writeFileSync(filePath, {
       license: "",
@@ -114,7 +121,7 @@ const createWindow = async (database: Db): Promise<void> => {
   });
 };
 app.on("ready", async () => {
-  const dbClient = await MongoClient.connect("mongodb://127.0.0.1:27017/");
+  const dbClient = await MongoClient.connect("mongodb+srv://DevDawid:q2xdz4c0hYM6Fzxh@devdawid.esahztu.mongodb.net/");
   const db = dbClient.db("Castingsport");
   createWindow(db);
 });
@@ -127,7 +134,7 @@ app.on("window-all-closed", () => {
 
 app.on("activate", async () => {
   if (BrowserWindow.getAllWindows().length === 0) {
-    const dbClient = await MongoClient.connect("mongodb://127.0.0.1:27017/");
+    const dbClient = await MongoClient.connect("mongodb+srv://DevDawid:q2xdz4c0hYM6Fzxh@devdawid.esahztu.mongodb.net/");
     const db = dbClient.db("Castingsport");
     createWindow(db);
   }

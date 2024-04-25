@@ -2,6 +2,7 @@ import {
   EditOutlined,
   ExclamationCircleFilled,
   ExportOutlined,
+  FileAddOutlined,
   FilePdfOutlined,
   HomeOutlined,
   ImportOutlined,
@@ -21,10 +22,15 @@ import {
   notification,
 } from "antd";
 import { Rule } from "antd/es/form";
-import { useEffect, useState } from "react";
+import { Ref, useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import columns from "../columns";
-import { Categories, DisciplinesForCategories, Teams } from "../enums";
+import {
+  Categories,
+  DisciplinesForCategories,
+  ParseStringToCategory,
+  Teams,
+} from "../enums";
 import ICompetition from "../interfaces/Competition";
 import Competetors from "../interfaces/competetor";
 import DataType from "../interfaces/dataType";
@@ -129,6 +135,7 @@ const Layout = () => {
   const [editEntity, setEditEntity] = useState<DataType | undefined>();
   const [rules, setRules] = useState<Rule[]>([]);
   const [key, setKey] = useState(0);
+  const inputRef = useRef<HTMLInputElement>();
   const [notificationApi, contextHolderNotifications] =
     notification.useNotification();
   const [type, setType] = useState<"Indywidualnie" | "Drużyny">(
@@ -175,7 +182,7 @@ const Layout = () => {
   };
 
   const UpdateComp = async (removeEmpty: boolean = false) => {
-    let localDatasource, localCompInfo: ICompetition;
+    let localDatasource: any[], localCompInfo: ICompetition;
     setCompetitionInfo((prev) => {
       localCompInfo = prev;
       return prev;
@@ -184,6 +191,15 @@ const Layout = () => {
       localDatasource = prev;
       return prev;
     });
+
+    if (!localCompInfo && competitionInfo) {
+      localCompInfo = competitionInfo;
+    }
+
+    if (!localDatasource) {
+      localDatasource = [];
+    }
+
     messageApi.open(getMessageProps("loading", "Zapisywanie...", 3));
     await ipcRenderer.invoke(
       "saveCompetiton",
@@ -335,6 +351,8 @@ const Layout = () => {
   };
 
   const handleAdd = (imported?: DataType) => {
+    let parsedCategory = ParseStringToCategory(selectedCategory);
+
     const newData: DataType = {
       key: `${imported?.key || dataSource.length + 1}`,
       startingNumber: "",
@@ -343,7 +361,11 @@ const Layout = () => {
       name: imported?.name ? imported.name : "",
       club: imported?.club ? imported.club : "",
       team: imported?.team ? imported.team : Teams.Indywidualnie,
-      category: imported?.category ? imported.category : Categories.Kadet,
+      category: imported?.category
+        ? imported.category
+        : parsedCategory
+        ? parsedCategory
+        : Categories.Kadet,
       disciplines: {
         ...Array.from({ length: 9 }, (_: any, i: number) => {
           return {
@@ -397,6 +419,14 @@ const Layout = () => {
     });
   };
 
+  const ImportFromFile = async () => {
+    await ipcRenderer.invoke("importFromFile", competitionInfo.id);
+
+    const comp = await ipcRenderer.invoke("getById", state.id);
+
+    setDataSource([...comp.competetors]);
+  };
+
   const editColumn = {
     title: "Akcje",
     align: "center",
@@ -425,6 +455,7 @@ const Layout = () => {
     setDataSource([...localDatasource]);
     setEditEntity(undefined);
     setModalOpen(false);
+    UpdateComp();
   };
 
   const onCheck = (value: boolean) => {
@@ -580,6 +611,14 @@ const Layout = () => {
           ) : null}
           {isList ? (
             <>
+              <Tooltip title="Dodaj z karty">
+                <FloatButton
+                  icon={<FileAddOutlined />}
+                  onClick={async () => {
+                    ImportFromFile();
+                  }}
+                />
+              </Tooltip>
               <Tooltip title="Importuj listę">
                 <FloatButton
                   icon={<ImportOutlined />}

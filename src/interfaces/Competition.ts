@@ -1,4 +1,3 @@
-import DataType from "./dataType";
 
 interface ICompetition{
     id:string,

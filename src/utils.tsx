@@ -161,7 +161,7 @@ export const getMessageProps = (
 export const generateTeamsMergedFinals = (
   finals: { name: string; scores: { teams: team[] } }[]
 ) => {
-  console.log(finals)
+  console.log(finals);
   let mergedFinalsTeams: mergedFinalsTeams[] = [];
   //Dont kill me for polish signs :((
   let teamsCount: { [K in keyof typeof Teams]: number } = {
@@ -218,17 +218,16 @@ export const generateTeamsMergedFinals = (
   for (let j = 0; j < mergedFinalsTeams.length; j++) {
     const team = mergedFinalsTeams[j];
     const currentComps = team.scores.map((x) => x.key);
-    let allComps = finals.map((x) => x.name)
-    let missingCompetitions = allComps.filter(x => !currentComps.includes(x));
+    let allComps = finals.map((x) => x.name);
+    let missingCompetitions = allComps.filter((x) => !currentComps.includes(x));
     for (let i = 0; i < missingCompetitions.length; i++) {
       const element = missingCompetitions[i];
       team.scores.push({
         key: element,
-        place:
-          teamsCount[team.category as keyof typeof Teams],
+        place: teamsCount[team.category as keyof typeof Teams],
         score3: 0,
         score5: 0,
-      })
+      });
     }
   }
 
@@ -391,6 +390,11 @@ const mapToMergedFinals = (
   });
 };
 
+export const Capitalize = (text: string) => {
+  if (text.length == 0) return "";
+  return text[0].toUpperCase() + text.substring(1).toLowerCase();
+};
+
 function levenshteinDistance(s1: string, s2: string) {
   if (s1.length === 0) return s2.length;
   if (s2.length === 0) return s1.length;
@@ -421,7 +425,11 @@ function levenshteinDistance(s1: string, s2: string) {
   return matrix[s1.length][s2.length];
 }
 
-export function compareWithTolerance(s1: string, s2: string, tolerance: number) {
+export function compareWithTolerance(
+  s1: string,
+  s2: string,
+  tolerance: number
+) {
   const distance = levenshteinDistance(s1.trim(), s2.trim());
   return distance <= tolerance;
 }

@@ -1,12 +1,24 @@
-export enum Categories{
-    Kadet = "Kadet",
-    Junior = "Junior",
-    Juniorka = "Juniorka",
-    Senior = "Senior",
-    Kobieta = "Kobieta",
+import { Capitalize } from "./utils";
+
+export enum Categories {
+  Kadet = "Kadet",
+  Junior = "Junior",
+  Juniorka = "Juniorka",
+  Senior = "Senior",
+  Kobieta = "Kobieta",
 }
 
-export enum DisciplinesForCategories{
+export const ParseStringToCategory = (text: string): Categories => {
+  text = Capitalize(text)
+  return Categories[text as Categories];
+};
+
+export const ParseStringToTeam = (text: string): Teams => {
+  text = Capitalize(text)
+  return Teams[text as Teams];
+};
+
+export enum DisciplinesForCategories {
   Kadet = 3,
   Junior = 5,
   Juniorka = 5,
@@ -14,7 +26,7 @@ export enum DisciplinesForCategories{
   Kobieta = 5,
 }
 
-export enum Teams{
+export enum Teams {
   Indywidualnie = "Indywidualnie",
   Młodzieżowa = "Młodzieżowa",
   Seniorów = "Seniorów",

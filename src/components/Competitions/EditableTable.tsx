@@ -62,13 +62,16 @@ const EditableCell: React.FC<EditableCellProps> = ({
 
   const save = async (value?: any) => {
     try {
-      if(!value || typeof value == "function") return toggleEdit()
-      if(typeof value == "object" && (value.target as HTMLInputElement).value){
-        form.setFieldsValue({club:(value.target as HTMLInputElement).value})
-        value = (value.target as HTMLInputElement).value
+      if (!value || typeof value == "function") return toggleEdit();
+      if (
+        typeof value == "object" &&
+        (value.target as HTMLInputElement).value
+      ) {
+        form.setFieldsValue({ club: (value.target as HTMLInputElement).value });
+        value = (value.target as HTMLInputElement).value;
       }
       const values = await form.validateFields();
-      if (value && dataIndex === "team") {
+      if (value && typeof value == "string" && dataIndex === "team") {
         values.team = value;
       }
 
@@ -105,7 +108,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
             onBlur={save}
             onSelect={save}
             onDeselect={save}
-            dropdownStyle={{width:'fit-content'}}
+            dropdownStyle={{ width: "fit-content" }}
             autoFocus
             open
             options={Object.keys(Categories).map((key) => {
@@ -119,7 +122,7 @@ const EditableCell: React.FC<EditableCellProps> = ({
           <Select
             style={{ width: 120 }}
             onBlur={save}
-            dropdownStyle={{width:'fit-content'}}
+            dropdownStyle={{ width: "fit-content" }}
             onSelect={save}
             onDeselect={save}
             autoFocus
@@ -134,17 +137,19 @@ const EditableCell: React.FC<EditableCellProps> = ({
         ) : dataIndex === "club" ? (
           <Select
             style={{ width: 120 }}
-            dropdownStyle={{width:'fit-content'}}
+            dropdownStyle={{ width: "fit-content" }}
             onBlur={save}
             onSelect={save}
             onDeselect={save}
             showSearch
             notFoundContent={null}
             open
-            onKeyUp={key => {
-              if(key.code == 'Enter'){
-                form.setFieldsValue({club:(key.target as HTMLInputElement).value})
-                save((key.target as HTMLInputElement).value)
+            onKeyUp={(key) => {
+              if (key.code == "Enter") {
+                form.setFieldsValue({
+                  club: (key.target as HTMLInputElement).value,
+                });
+                save((key.target as HTMLInputElement).value);
               }
             }}
             autoFocus
