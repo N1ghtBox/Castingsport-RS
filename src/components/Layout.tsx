@@ -197,7 +197,7 @@ const Layout = () => {
     }
 
     if (!localDatasource) {
-      localDatasource = [];
+      localDatasource = dataSource;
     }
 
     messageApi.open(getMessageProps("loading", "Zapisywanie...", 3));

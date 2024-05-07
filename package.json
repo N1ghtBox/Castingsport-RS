@@ -1,7 +1,7 @@
 {
   "name": "castingsport-rs",
   "productName": "Castingsport-RS",
-  "version": "1.1.7",
+  "version": "1.1.8",
   "description": "Program do wyników castingsport",
   "main": ".webpack/main",
   "scripts": {
