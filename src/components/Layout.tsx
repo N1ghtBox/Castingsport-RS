@@ -354,7 +354,7 @@ const Layout = () => {
     let parsedCategory = ParseStringToCategory(selectedCategory);
 
     const newData: DataType = {
-      key: `${imported?.key || dataSource.length + 1}`,
+      key: `${imported?.key || Math.max(...dataSource.map(x => parseInt(x.key.toString()))) + 1}`,
       startingNumber: "",
       girl: imported?.girl !== undefined ? imported.girl : false,
       disqualified: false,
